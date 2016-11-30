@@ -20,6 +20,7 @@
 		8D8343C01DEF2415009DF3CC /* RootRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343BF1DEF2415009DF3CC /* RootRecord.swift */; };
 		8D8343C21DEF242B009DF3CC /* NestedRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C11DEF242B009DF3CC /* NestedRecord.swift */; };
 		8D8343C41DEF78D5009DF3CC /* LocalStorageInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C31DEF78D5009DF3CC /* LocalStorageInterface.swift */; };
+		8D8343C61DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C51DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 		8D8343BF1DEF2415009DF3CC /* RootRecord.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RootRecord.swift; sourceTree = "<group>"; };
 		8D8343C11DEF242B009DF3CC /* NestedRecord.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NestedRecord.swift; sourceTree = "<group>"; };
 		8D8343C31DEF78D5009DF3CC /* LocalStorageInterface.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalStorageInterface.swift; sourceTree = "<group>"; };
+		8D8343C51DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InMemoryLocalStorageInterface.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,6 +89,7 @@
 				8D8343BF1DEF2415009DF3CC /* RootRecord.swift */,
 				8D8343C11DEF242B009DF3CC /* NestedRecord.swift */,
 				8D8343C31DEF78D5009DF3CC /* LocalStorageInterface.swift */,
+				8D8343C51DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift */,
 			);
 			path = CloudKitTodo;
 			sourceTree = "<group>";
@@ -187,6 +190,7 @@
 				8D8343C01DEF2415009DF3CC /* RootRecord.swift in Sources */,
 				8D171BD71DEF0FD400EA1597 /* AppDelegate.swift in Sources */,
 				8D8343C41DEF78D5009DF3CC /* LocalStorageInterface.swift in Sources */,
+				8D8343C61DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift in Sources */,
 				8D8343BC1DEF191D009DF3CC /* Todo.swift in Sources */,
 				8D8343C21DEF242B009DF3CC /* NestedRecord.swift in Sources */,
 			);
