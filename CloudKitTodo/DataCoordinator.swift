@@ -1,5 +1,5 @@
 //
-//  DataStore.swift
+//  DataCoordinator.swift
 //  CloudKitTodo
 //
 //  Created by Matthew McCroskey on 11/30/16.
@@ -13,12 +13,12 @@ typealias LocalRecordStorage = [RecordIdentifier : LocalRecord]
 typealias StructuredLocalRecordStorage = [String : LocalRecordStorage]
 typealias RefreshCompletion = ((Bool, Error?) -> Void)
 
-class DataStore {
+class DataCoordinator {
     
     
     // MARK: - Singleton Instance
     
-    static let shared = DataStore()
+    static let shared = DataCoordinator()
     
     
     // MARK: - Public Properties

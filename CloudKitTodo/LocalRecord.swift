@@ -56,7 +56,7 @@ class LocalRecord: Equatable {
         
         if let reference = value as? CKReference {
             
-            guard let value = DataStore.shared.retrieveCachedRecord(matching: reference.recordID.recordName) else {
+            guard let value = DataCoordinator.shared.retrieveCachedRecord(matching: reference.recordID.recordName) else {
                 
                 fatalError(
                     "ERROR: When attempting to get the value for the key \(key) in the backingRemoteRecord, " +
@@ -125,8 +125,8 @@ class LocalRecord: Equatable {
             configureNewReference()
         }
         
-        // Then make sure the relatedRecord is saved in the DataStore
-        DataStore.shared.addRecord(relatedRecord)
+        // Then make sure the relatedRecord is saved in the DataCoordinator
+        DataCoordinator.shared.addRecord(relatedRecord)
         
     }
     
