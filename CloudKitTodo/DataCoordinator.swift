@@ -30,43 +30,50 @@ class DataCoordinator {
             fatalError("DataCoordinator is an abstract class; it must not be directly instantiated.")
         }
         
+        self.localStorageInterface = InMemoryLocalStorageInterface()
+        
     }
     
     
     // MARK: - Public Properties
     
+    var localStorageInterface: LocalStorageInterface
     
     
-    // MARK: Fetching Items
+    
+    func retrieveAllCachedRecords() -> Set<LocalRecord> {
+        return self.localStorageInterface.allRecords()
+    }
     
     func retrieveCachedRecord(matching potentiallyStaleInstance:LocalRecord) -> LocalRecord? {
         return self.retrieveCachedRecord(matching: potentiallyStaleInstance.identifier)
     }
     
     func retrieveCachedRecord(matching identifier:RecordIdentifier) -> LocalRecord? {
-        
-        if let record = self.records.values.filter({ $0.identifier == identifier }).first {
-            return record
-        }
-        
-        return nil
-        
+        return self.localStorageInterface.record(matching: identifier)
     }
     
     
     // MARK: - Setting Items
     
     func addRecord(_ record:LocalRecord) {
-        
-        let identifier = record.identifier
-        
-        self.records[identifier] = record
-        self.recordsWithChangesNotYetSavedToCloud[identifier] = record
-        
+        self.localStorageInterface.addRecord(record)
     }
     
     func addRecords(_ records:Set<LocalRecord>) {
-        
+        self.localStorageInterface.addRecords(records)
+    }
+    
+    func removeRecord(_ record:LocalRecord) {
+        self.removeRecord(matching: record.identifier)
+    }
+    
+    func removeRecord(matching recordIdentifier:RecordIdentifier) {
+        self.localStorageInterface.removeRecord(matching: recordIdentifier)
+    }
+    
+    func removeAllRecords() {
+        self.localStorageInterface.removeAllRecords()
     }
     
     
