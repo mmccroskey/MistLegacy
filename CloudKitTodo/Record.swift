@@ -13,8 +13,8 @@ typealias RecordIdentifier = String
 
 enum RecordAccessibility {
     case publiclyAccessible
-    case accessibleToCreator
-    case accessibleToCollaborators
+    case accessibleOnlyToCollaborators
+    case accessibleOnlyToCreator
 }
 
 class Record: Hashable {
