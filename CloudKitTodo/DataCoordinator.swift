@@ -9,8 +9,6 @@
 import Foundation
 import CloudKit
 
-typealias RecordStorage = [RecordIdentifier : Record]
-typealias StructuredRecordStorage = [String : RecordStorage]
 typealias RefreshCompletion = ((Bool, Error?) -> Void)
 
 class DataCoordinator {
@@ -90,11 +88,6 @@ class DataCoordinator {
     // MARK: - Updating Remote Content with Changes from Local
     
     
-    
-    // MARK: - Private Properties
-    
-    private var records: RecordStorage = [:]
-    private var recordsWithChangesNotYetSavedToCloud: RecordStorage = [:]
     
     
     // MARK: - Private Functions
