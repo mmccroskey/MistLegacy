@@ -21,6 +21,18 @@ class DataCoordinator {
     static let shared = DataCoordinator()
     
     
+    // MARK: - Initializer
+    
+    init() {
+        
+        let typeString = String(describing: DataCoordinator.type())
+        guard typeString != "DataCoordinator" else {
+            fatalError("DataCoordinator is an abstract class; it must not be directly instantiated.")
+        }
+        
+    }
+    
+    
     // MARK: - Public Properties
     
 //    var todos: StructuredLocalRecordStorage {
@@ -84,5 +96,10 @@ class DataCoordinator {
     private var recordsWithChangesNotYetSavedToCloud: LocalRecordStorage = [:]
     
     
+    // MARK: - Private Functions
+    
+    private static func type() -> DataCoordinator.Type {
+        return self
+    }
     
 }
