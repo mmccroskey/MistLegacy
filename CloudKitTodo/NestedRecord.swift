@@ -14,11 +14,11 @@ class NestedRecord: Record {
     
     // MARK: - Initializers
     
-    init(accessibility:RecordAccessibility, recordZone:CKRecordZone, parent:Record) {
+    init(parent:Record) {
         
         self.parent = parent
         
-        super.init(accessibility: accessibility, recordZone: recordZone)
+        super.init(accessibility: parent.accessibility, recordZone: parent.recordZone)
         
         self.backingRemoteRecord.setParent(parent.backingRemoteRecord)
         
