@@ -82,7 +82,7 @@ class DataCoordinator {
     
     func performCloudRefreshOfPublicData(inZone zone:CKRecordZone, completion:RefreshCompletion) {}
     
-    func performCloudRefreshOfPrivateData(_ completion:RefreshCompletion) {}
+    func performCloudRefreshOfAllPrivateData(_ completion:RefreshCompletion) {}
     
     func performCloudRefreshOfPrivateObjectSubtree(originatingWith rootObject:LocalRecord, completion:RefreshCompletion) {}
     
