@@ -16,12 +16,14 @@ class LocalRecord: Hashable {
     
     // MARK: - Initializers
     
-    init() {
+    init(cloudDatabase:CKDatabase) {
         
         let typeString = String(describing: LocalRecord.type())
         guard typeString != "LocalRecord" else {
             fatalError("LocalRecord is an abstract class; it must not be directly instantiated.")
         }
+        
+        self.cloudDatabase = cloudDatabase
         
         self.identifier = UUID().uuidString as RecordIdentifier
         
@@ -32,6 +34,8 @@ class LocalRecord: Hashable {
     
     
     // MARK: - Public Properties
+    
+    let cloudDatabase: CKDatabase
     
     var typeString: String {
         

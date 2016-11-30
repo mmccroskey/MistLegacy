@@ -14,13 +14,15 @@ class RootRecord: LocalRecord {
     
     // MARK: - Initializers
     
-    init(owner:User) {
+    init(cloudDatabase:CKDatabase, owner:User) {
         
         let zoneName = UUID().uuidString as RecordIdentifier
         let recordZoneID = CKRecordZoneID(zoneName: zoneName, ownerName: owner.identifier)
         let recordZone = CKRecordZone(zoneID: recordZoneID)
         
         self.recordZone = recordZone
+        
+        super.init(cloudDatabase: cloudDatabase)
         
     }
     

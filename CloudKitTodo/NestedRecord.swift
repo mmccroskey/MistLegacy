@@ -14,11 +14,11 @@ class NestedRecord: LocalRecord {
     
     // MARK: - Initializers
     
-    init(parent:LocalRecord) {
+    init(cloudDatabase:CKDatabase, parent:LocalRecord) {
         
         self.parent = parent
         
-        super.init()
+        super.init(cloudDatabase: cloudDatabase)
         
         self.backingRemoteRecord.setParent(parent.backingRemoteRecord)
         
