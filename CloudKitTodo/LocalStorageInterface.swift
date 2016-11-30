@@ -14,7 +14,6 @@ protocol LocalStorageInterface {
     // MARK: - Retrieving Records
     
     func allRecords() -> Set<LocalRecord>
-    func allRecords(matching predicate:NSPredicate) -> Set<LocalRecord>
     func record(matching recordIdentifier:RecordIdentifier) -> LocalRecord?
     
     
