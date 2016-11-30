@@ -35,17 +35,6 @@ class DataCoordinator {
     
     // MARK: - Public Properties
     
-//    var todos: StructuredLocalRecordStorage {
-//        
-//        get {
-//            
-//            let allTodos = self.records.values.filter { return $0.typeString == "Todo" }
-//            
-//            
-//            
-//        }
-//        
-//    }
     
     
     // MARK: Fetching Items
