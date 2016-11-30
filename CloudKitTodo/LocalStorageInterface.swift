@@ -30,4 +30,10 @@ protocol LocalStorageInterface {
     func removeAllRecords()
     
     
+    // MARK: - Records Awaiting Cloud Synchronization
+    
+    var recordsAwaitingCloudSynchronization: Set<Record> { get set }
+    
+    
+    
 }
