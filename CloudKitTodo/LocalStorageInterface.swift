@@ -30,10 +30,10 @@ protocol LocalStorageInterface {
     func removeAllRecords()
     
     
-    // MARK: - Records Awaiting Push To Cloud
+    // MARK: - Storage for Changes Awaiting Push To Cloud
     
-    var recordsAwaitingPushToCloud: Set<Record> { get set }
-    
+    var changedRecordsAwaitingPushToCloud: Set<Record> { get set }
+    var deletedRecordsAwaitingPushToCloud: Set<Record> { get set }
     
     
 }
