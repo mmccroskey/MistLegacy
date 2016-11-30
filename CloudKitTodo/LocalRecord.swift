@@ -11,7 +11,7 @@ import CloudKit
 
 typealias RecordIdentifier = String
 
-class LocalRecord: Equatable {
+class LocalRecord: Hashable {
     
     
     // MARK: - Initializers
@@ -136,14 +136,21 @@ class LocalRecord: Equatable {
     internal let backingRemoteRecord: CKRecord
     
     
-    // MARK: - Protocol Conformance
-    
-    static func ==(left:LocalRecord, right:LocalRecord) -> Bool {
-        return left.backingRemoteRecord == right.backingRemoteRecord
-    }
+    // MARK: - Private Functions
     
     private static func type() -> LocalRecord.Type {
         return self
+    }
+    
+    
+    // MARK: - Protocol Conformance
+    
+    var hashValue: Int {
+        return self.backingRemoteRecord.hashValue
+    }
+    
+    static func ==(left:LocalRecord, right:LocalRecord) -> Bool {
+        return left.backingRemoteRecord == right.backingRemoteRecord
     }
     
 }
