@@ -22,7 +22,7 @@ class LocalRecord: Hashable {
     
     // MARK: - Initializers
     
-    init(accessibility:RecordAccessibility) {
+    init(accessibility:RecordAccessibility, recordZone:CKRecordZone) {
         
         let typeString = String(describing: LocalRecord.type())
         guard typeString != "LocalRecord" else {
@@ -30,6 +30,7 @@ class LocalRecord: Hashable {
         }
         
         self.accessibility = accessibility
+        self.recordZone = recordZone
         
         self.identifier = UUID().uuidString as RecordIdentifier
         
@@ -42,6 +43,7 @@ class LocalRecord: Hashable {
     // MARK: - Public Properties
     
     let accessibility: RecordAccessibility
+    let recordZone: CKRecordZone
     
     var typeString: String {
         
