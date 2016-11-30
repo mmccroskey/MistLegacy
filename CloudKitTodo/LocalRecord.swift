@@ -18,7 +18,7 @@ class LocalRecord: Hashable {
     
     init() {
         
-        let typeString = String(describing: RootRecord.type())
+        let typeString = String(describing: LocalRecord.type())
         guard typeString != "LocalRecord" else {
             fatalError("LocalRecord is an abstract class; it must not be directly instantiated.")
         }
