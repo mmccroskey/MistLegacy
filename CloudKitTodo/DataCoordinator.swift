@@ -65,6 +65,10 @@ class DataCoordinator {
         
     }
     
+    func addRecords(_ records:Set<LocalRecord>) {
+        
+    }
+    
     
     // MARK: - Updating Local Content with Changes from Remote
     
