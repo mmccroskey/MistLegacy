@@ -40,6 +40,7 @@ class DataCoordinator {
     var localStorageInterface: LocalStorageInterface
     
     
+    // MARK: Fetching Locally-Cached Items
     
     func retrieveAllCachedRecords() -> Set<LocalRecord> {
         return self.localStorageInterface.allRecords()
@@ -54,7 +55,7 @@ class DataCoordinator {
     }
     
     
-    // MARK: - Setting Items
+    // MARK: - Making Local Changes
     
     func addRecord(_ record:LocalRecord) {
         self.localStorageInterface.addRecord(record)
