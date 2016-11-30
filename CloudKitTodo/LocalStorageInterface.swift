@@ -13,19 +13,19 @@ protocol LocalStorageInterface {
     
     // MARK: - Retrieving Records
     
-    func allRecords() -> Set<LocalRecord>
-    func record(matching recordIdentifier:RecordIdentifier) -> LocalRecord?
+    func allRecords() -> Set<Record>
+    func record(matching recordIdentifier:RecordIdentifier) -> Record?
     
     
     // MARK: - Adding Records
     
-    func addRecord(_ record:LocalRecord)
-    func addRecords(_ records:Set<LocalRecord>)
+    func addRecord(_ record:Record)
+    func addRecords(_ records:Set<Record>)
     
     
     // MARK: - Removing Records
     
-    func removeRecord(_ record:LocalRecord)
+    func removeRecord(_ record:Record)
     func removeRecord(matching recordIdentifier:RecordIdentifier)
     func removeAllRecords()
     

@@ -13,22 +13,22 @@ class InMemoryLocalStorageInterface: LocalStorageInterface {
     
     // MARK: - Retrieving Records
     
-    func allRecords() -> Set<LocalRecord> {
+    func allRecords() -> Set<Record> {
         return Set(self.records.values)
     }
     
-    func record(matching recordIdentifier:RecordIdentifier) -> LocalRecord? {
+    func record(matching recordIdentifier:RecordIdentifier) -> Record? {
         return self.records[recordIdentifier]
     }
     
     
     // MARK: - Adding Records
     
-    func addRecord(_ record:LocalRecord) {
+    func addRecord(_ record:Record) {
         self.records[record.identifier] = record
     }
     
-    func addRecords(_ records:Set<LocalRecord>) {
+    func addRecords(_ records:Set<Record>) {
         
         for record in records {
             self.records[record.identifier] = record
@@ -39,7 +39,7 @@ class InMemoryLocalStorageInterface: LocalStorageInterface {
     
     // MARK: - Removing Records
     
-    func removeRecord(_ record:LocalRecord) {
+    func removeRecord(_ record:Record) {
         self.removeRecord(matching: record.identifier)
     }
     
@@ -54,7 +54,7 @@ class InMemoryLocalStorageInterface: LocalStorageInterface {
     
     // MARK: - Private Properties
     
-    private var records: [RecordIdentifier : LocalRecord] = [:]
+    private var records: [RecordIdentifier : Record] = [:]
     
     
     

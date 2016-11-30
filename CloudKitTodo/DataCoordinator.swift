@@ -9,8 +9,8 @@
 import Foundation
 import CloudKit
 
-typealias LocalRecordStorage = [RecordIdentifier : LocalRecord]
-typealias StructuredLocalRecordStorage = [String : LocalRecordStorage]
+typealias RecordStorage = [RecordIdentifier : Record]
+typealias StructuredRecordStorage = [String : RecordStorage]
 typealias RefreshCompletion = ((Bool, Error?) -> Void)
 
 class DataCoordinator {
@@ -42,30 +42,30 @@ class DataCoordinator {
     
     // MARK: Fetching Locally-Cached Items
     
-    func retrieveAllCachedRecords() -> Set<LocalRecord> {
+    func retrieveAllCachedRecords() -> Set<Record> {
         return self.localStorageInterface.allRecords()
     }
     
-    func retrieveCachedRecord(matching potentiallyStaleInstance:LocalRecord) -> LocalRecord? {
+    func retrieveCachedRecord(matching potentiallyStaleInstance:Record) -> Record? {
         return self.retrieveCachedRecord(matching: potentiallyStaleInstance.identifier)
     }
     
-    func retrieveCachedRecord(matching identifier:RecordIdentifier) -> LocalRecord? {
+    func retrieveCachedRecord(matching identifier:RecordIdentifier) -> Record? {
         return self.localStorageInterface.record(matching: identifier)
     }
     
     
     // MARK: - Making Local Changes
     
-    func addRecord(_ record:LocalRecord) {
+    func addRecord(_ record:Record) {
         self.localStorageInterface.addRecord(record)
     }
     
-    func addRecords(_ records:Set<LocalRecord>) {
+    func addRecords(_ records:Set<Record>) {
         self.localStorageInterface.addRecords(records)
     }
     
-    func removeRecord(_ record:LocalRecord) {
+    func removeRecord(_ record:Record) {
         self.removeRecord(matching: record.identifier)
     }
     
@@ -84,7 +84,7 @@ class DataCoordinator {
     
     func performCloudRefreshOfAllPrivateData(_ completion:RefreshCompletion) {}
     
-    func performCloudRefreshOfPrivateObjectSubtree(originatingWith rootObject:LocalRecord, completion:RefreshCompletion) {}
+    func performCloudRefreshOfPrivateObjectSubtree(originatingWith rootObject:Record, completion:RefreshCompletion) {}
     
     
     // MARK: - Updating Remote Content with Changes from Local
@@ -93,8 +93,8 @@ class DataCoordinator {
     
     // MARK: - Private Properties
     
-    private var records: LocalRecordStorage = [:]
-    private var recordsWithChangesNotYetSavedToCloud: LocalRecordStorage = [:]
+    private var records: RecordStorage = [:]
+    private var recordsWithChangesNotYetSavedToCloud: RecordStorage = [:]
     
     
     // MARK: - Private Functions

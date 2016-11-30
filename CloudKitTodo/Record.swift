@@ -1,5 +1,5 @@
 //
-//  LocalRecord.swift
+//  Record.swift
 //  CloudKitTodo
 //
 //  Created by Matthew McCroskey on 11/30/16.
@@ -17,16 +17,16 @@ enum RecordAccessibility {
     case accessibleToCollaborators
 }
 
-class LocalRecord: Hashable {
+class Record: Hashable {
     
     
     // MARK: - Initializers
     
     init(accessibility:RecordAccessibility, recordZone:CKRecordZone) {
         
-        let typeString = String(describing: LocalRecord.type())
-        guard typeString != "LocalRecord" else {
-            fatalError("LocalRecord is an abstract class; it must not be directly instantiated.")
+        let typeString = String(describing: Record.type())
+        guard typeString != "Record" else {
+            fatalError("Record is an abstract class; it must not be directly instantiated.")
         }
         
         self.accessibility = accessibility
@@ -48,7 +48,7 @@ class LocalRecord: Hashable {
     var typeString: String {
         
         let mirror = Mirror(reflecting: self)
-        let selfType = mirror.subjectType as! LocalRecord.Type
+        let selfType = mirror.subjectType as! Record.Type
         let selfTypeString = String(describing: selfType)
         
         return selfTypeString
@@ -73,7 +73,7 @@ class LocalRecord: Hashable {
                 fatalError(
                     "ERROR: When attempting to get the value for the key \(key) in the backingRemoteRecord, " +
                     "we found a CKReference, but we have no object for its corresponding identifier " +
-                    "in our local store. Here's the LocalRecord we were searching: \(self)"
+                    "in our local store. Here's the Record we were searching: \(self)"
                 )
                 
             }
@@ -90,19 +90,19 @@ class LocalRecord: Hashable {
     
     func setValue(_ value:Any?, forKey key:String) {
         
-        guard !(value is LocalRecord) else {
-            fatalError("To set another RelatedRecord as the value for a key on LocalRecord, please use the setRelatedRecord:forKey: function.")
+        guard !(value is Record) else {
+            fatalError("To set another RelatedRecord as the value for a key on Record, please use the setRelatedRecord:forKey: function.")
         }
         
         guard value is CKRecordValue else {
-            fatalError("ERROR: Every value of LocalRecord must conform to CKRecordValue. The value you've provided does not; here it is: \(value)")
+            fatalError("ERROR: Every value of Record must conform to CKRecordValue. The value you've provided does not; here it is: \(value)")
         }
         
         self.backingRemoteRecord.setValue(value, forKey: key)
         
     }
     
-    func setRelatedRecord(_ relatedRecord:LocalRecord, forKey key:String, withReferenceAction action:CKReferenceAction) {
+    func setRelatedRecord(_ relatedRecord:Record, forKey key:String, withReferenceAction action:CKReferenceAction) {
         
         // First make sure the CKReference exists and is properly configured
         
@@ -117,7 +117,7 @@ class LocalRecord: Hashable {
             guard let extantReference = extantObject as? CKReference else {
                 
                 fatalError(
-                    "ERROR: You're attempting to store a LocalRecord (aka a relation) " +
+                    "ERROR: You're attempting to store a Record (aka a relation) " +
                     "under a key where a non-relation is currently stored. This is " +
                     "not allowed. Here are the relevant details:\n" +
                     "KEY: \(key)\n" +
@@ -150,7 +150,7 @@ class LocalRecord: Hashable {
     
     // MARK: - Private Functions
     
-    private static func type() -> LocalRecord.Type {
+    private static func type() -> Record.Type {
         return self
     }
     
@@ -161,7 +161,7 @@ class LocalRecord: Hashable {
         return self.backingRemoteRecord.hashValue
     }
     
-    static func ==(left:LocalRecord, right:LocalRecord) -> Bool {
+    static func ==(left:Record, right:Record) -> Bool {
         return left.backingRemoteRecord == right.backingRemoteRecord
     }
     

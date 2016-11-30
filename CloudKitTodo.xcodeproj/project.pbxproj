@@ -14,7 +14,7 @@
 		8D171BE11DEF0FD400EA1597 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8D171BDF1DEF0FD400EA1597 /* LaunchScreen.storyboard */; };
 		8D171BEB1DEF109A00EA1597 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D171BEA1DEF109A00EA1597 /* CloudKit.framework */; };
 		8D8343B71DEF11D8009DF3CC /* DataCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343B61DEF11D8009DF3CC /* DataCoordinator.swift */; };
-		8D8343B91DEF13F1009DF3CC /* LocalRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343B81DEF13F1009DF3CC /* LocalRecord.swift */; };
+		8D8343B91DEF13F1009DF3CC /* Record.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343B81DEF13F1009DF3CC /* Record.swift */; };
 		8D8343BC1DEF191D009DF3CC /* Todo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343BB1DEF191D009DF3CC /* Todo.swift */; };
 		8D8343BE1DEF227C009DF3CC /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343BD1DEF227C009DF3CC /* User.swift */; };
 		8D8343C21DEF242B009DF3CC /* NestedRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C11DEF242B009DF3CC /* NestedRecord.swift */; };
@@ -33,7 +33,7 @@
 		8D171BE81DEF108F00EA1597 /* CloudKitTodo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CloudKitTodo.entitlements; sourceTree = "<group>"; };
 		8D171BEA1DEF109A00EA1597 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		8D8343B61DEF11D8009DF3CC /* DataCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataCoordinator.swift; sourceTree = "<group>"; };
-		8D8343B81DEF13F1009DF3CC /* LocalRecord.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalRecord.swift; sourceTree = "<group>"; };
+		8D8343B81DEF13F1009DF3CC /* Record.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Record.swift; sourceTree = "<group>"; };
 		8D8343BB1DEF191D009DF3CC /* Todo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Todo.swift; sourceTree = "<group>"; };
 		8D8343BD1DEF227C009DF3CC /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		8D8343C11DEF242B009DF3CC /* NestedRecord.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NestedRecord.swift; sourceTree = "<group>"; };
@@ -81,7 +81,7 @@
 				8D171BDF1DEF0FD400EA1597 /* LaunchScreen.storyboard */,
 				8D171BE21DEF0FD400EA1597 /* Info.plist */,
 				8D8343B61DEF11D8009DF3CC /* DataCoordinator.swift */,
-				8D8343B81DEF13F1009DF3CC /* LocalRecord.swift */,
+				8D8343B81DEF13F1009DF3CC /* Record.swift */,
 				8D8343BB1DEF191D009DF3CC /* Todo.swift */,
 				8D8343BD1DEF227C009DF3CC /* User.swift */,
 				8D8343C11DEF242B009DF3CC /* NestedRecord.swift */,
@@ -183,7 +183,7 @@
 				8D171BD91DEF0FD400EA1597 /* ViewController.swift in Sources */,
 				8D8343B71DEF11D8009DF3CC /* DataCoordinator.swift in Sources */,
 				8D8343BE1DEF227C009DF3CC /* User.swift in Sources */,
-				8D8343B91DEF13F1009DF3CC /* LocalRecord.swift in Sources */,
+				8D8343B91DEF13F1009DF3CC /* Record.swift in Sources */,
 				8D171BD71DEF0FD400EA1597 /* AppDelegate.swift in Sources */,
 				8D8343C41DEF78D5009DF3CC /* LocalStorageInterface.swift in Sources */,
 				8D8343C61DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift in Sources */,

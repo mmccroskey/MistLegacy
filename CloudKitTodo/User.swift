@@ -8,6 +8,6 @@
 
 import Foundation
 
-class User : LocalRecord {
+class User : Record {
     
 }

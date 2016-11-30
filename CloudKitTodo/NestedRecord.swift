@@ -9,12 +9,12 @@
 import Foundation
 import CloudKit
 
-class NestedRecord: LocalRecord {
+class NestedRecord: Record {
     
     
     // MARK: - Initializers
     
-    init(accessibility:RecordAccessibility, recordZone:CKRecordZone, parent:LocalRecord) {
+    init(accessibility:RecordAccessibility, recordZone:CKRecordZone, parent:Record) {
         
         self.parent = parent
         
@@ -27,6 +27,6 @@ class NestedRecord: LocalRecord {
     
     // MARK: - Public Properties
     
-    let parent: LocalRecord
+    let parent: Record
     
 }
