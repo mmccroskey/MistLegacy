@@ -11,19 +11,25 @@ import CloudKit
 
 typealias RecordIdentifier = String
 
+enum RecordAccessibility {
+    case publiclyAccessible
+    case accessibleToCreator
+    case accessibleToCollaborators
+}
+
 class LocalRecord: Hashable {
     
     
     // MARK: - Initializers
     
-    init(cloudDatabase:CKDatabase) {
+    init(accessibility:RecordAccessibility) {
         
         let typeString = String(describing: LocalRecord.type())
         guard typeString != "LocalRecord" else {
             fatalError("LocalRecord is an abstract class; it must not be directly instantiated.")
         }
         
-        self.cloudDatabase = cloudDatabase
+        self.accessibility = accessibility
         
         self.identifier = UUID().uuidString as RecordIdentifier
         
@@ -35,7 +41,7 @@ class LocalRecord: Hashable {
     
     // MARK: - Public Properties
     
-    let cloudDatabase: CKDatabase
+    let accessibility: RecordAccessibility
     
     var typeString: String {
         

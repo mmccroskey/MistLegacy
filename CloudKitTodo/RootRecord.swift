@@ -14,7 +14,7 @@ class RootRecord: LocalRecord {
     
     // MARK: - Initializers
     
-    init(cloudDatabase:CKDatabase, owner:User) {
+    init(accessibility:RecordAccessibility, owner:User) {
         
         let zoneName = UUID().uuidString as RecordIdentifier
         let recordZoneID = CKRecordZoneID(zoneName: zoneName, ownerName: owner.identifier)
@@ -22,7 +22,7 @@ class RootRecord: LocalRecord {
         
         self.recordZone = recordZone
         
-        super.init(cloudDatabase: cloudDatabase)
+        super.init(accessibility: accessibility)
         
     }
     
