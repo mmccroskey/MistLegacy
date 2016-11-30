@@ -8,8 +8,27 @@
 
 import Foundation
 
-class LocalStorageInterface {
+protocol LocalStorageInterface {
     
+    
+    // MARK: Retrieving Records
+    
+    func allRecords() -> Set<LocalRecord>
+    func allRecords(matching predicate:NSPredicate) -> Set<LocalRecord>
+    func record(matching recordIdentifier:RecordIdentifier) -> LocalRecord?
+    
+    
+    // MARK: Adding Records
+    
+    func addRecord(_ record:LocalRecord)
+    func addRecords(_ records:Set<LocalRecord>)
+    
+    
+    // MARK: Removing Records
+    
+    func removeRecord(_ record:LocalRecord)
+    func removeRecord(matching recordIdentifier:RecordIdentifier)
+    func removeAllRecords()
     
     
 }
