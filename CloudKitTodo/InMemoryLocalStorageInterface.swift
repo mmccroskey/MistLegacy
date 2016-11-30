@@ -52,6 +52,11 @@ class InMemoryLocalStorageInterface: LocalStorageInterface {
     }
     
     
+    // MARK: - Records Awaiting Cloud Synchronization
+    
+    var recordsAwaitingCloudSynchronization: Set<Record> = []
+    
+    
     // MARK: - Private Properties
     
     private var records: [RecordIdentifier : Record] = [:]
