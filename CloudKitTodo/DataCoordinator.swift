@@ -57,6 +57,8 @@ class DataCoordinator {
     
     private let operationQueue = OperationQueue()
     
+    private var retrievedRecordsCache: [RecordIdentifier : Record] = [:]
+    
     
     // MARK: - Enqueuing Operations
     
@@ -79,7 +81,22 @@ class DataCoordinator {
     func retrieveRecord(matching identifier:RecordIdentifier, retrievalCompleted:((Record?) -> Void)) {
         
         var record: Record? = nil
-        let execution = { record = self.localRecordStorage.record(matching: identifier) }
+        
+        let execution = {
+            
+            if let cachedRecord = self.retrievedRecordsCache[identifier] {
+                
+                record = cachedRecord
+                
+            } else {
+                
+                record = self.localRecordStorage.record(matching: identifier)
+                self.retrievedRecordsCache[identifier] = record
+                
+            }
+        
+        }
+        
         let completion = { retrievalCompleted(record) }
         
         self.addOperation(withExecutionBlock: execution, completionBlock: completion)
@@ -95,7 +112,20 @@ class DataCoordinator {
             
             do {
                 
-                try records = self.localRecordStorage.records(matching: filter)
+                let cachedRecords = try self.retrievedRecordsCache.values.filter(filter)
+                if cachedRecords.count > 0 {
+                    
+                    records = cachedRecords
+                    
+                } else {
+                    
+                    try records = self.localRecordStorage.records(matching: filter)
+                    
+                    for record in records {
+                        self.retrievedRecordsCache[record.identifier] = record
+                    }
+                    
+                }
                 
             } catch let fetchError {
                 
@@ -114,7 +144,26 @@ class DataCoordinator {
     func retrieveRecords(matching predicate:NSPredicate, retrievalCompleted:(([Record]) -> Void)) {
         
         var records: [Record] = []
-        let execution = { records = self.localRecordStorage.records(matching: predicate) }
+        
+        let execution = {
+            
+            let cachedRecords = self.retrievedRecordsCache.values.filter({ predicate.evaluate(with: $0) }) as [Record]
+            if cachedRecords.count > 0 {
+                
+                records = cachedRecords
+                
+            } else {
+                
+                records = self.localRecordStorage.records(matching: predicate)
+                
+                for record in records {
+                    self.retrievedRecordsCache[record.identifier] = record
+                }
+                
+            }
+        
+        }
+        
         let completion = { retrievalCompleted(records) }
         
         self.addOperation(withExecutionBlock: execution, completionBlock: completion)
@@ -149,10 +198,12 @@ class DataCoordinator {
                 switch changeType {
                     
                 case .addition:
+                    self.retrievedRecordsCache[record.identifier] = record
                     self.localRecordStorage.addRecord(record)
                     self.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.insert(record)
                     
                 case .removal:
+                    self.retrievedRecordsCache.removeValue(forKey: record.identifier)
                     self.localRecordStorage.removeRecord(record)
                     self.localCachedRecordChangesStorage.deletedRecordsAwaitingPushToCloud.insert(record)
                     self.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.remove(record)
