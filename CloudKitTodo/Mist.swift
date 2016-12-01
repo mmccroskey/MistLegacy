@@ -56,6 +56,15 @@ class Mist {
     }
     
     
+    // MARK: - Syncing Items
+    
+    static func sync(_ finished:((Bool, Error?) -> Void)) {
+        
+        
+        
+    }
+    
+    
     // MARK: - Configuration Properties
     
     static var localRecordStorage: LocalRecordStorage = InMemoryStorage()
@@ -82,6 +91,7 @@ class Mist {
     
     private static let queue = Queue()
     private static let localDataCoordinator = LocalDataCoordinator()
+    private static let remoteDataCoordinator = RemoteDataCoordinator()
     
     
     // MARK: - Private Classes
