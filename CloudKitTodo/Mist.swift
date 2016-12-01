@@ -39,11 +39,6 @@ private class LocalDataCoordinator {
     
     init() {
         
-        let typeString = String(describing: LocalDataCoordinator.type())
-        guard typeString != "LocalDataCoordinator" else {
-            fatalError("LocalDataCoordinator is an abstract class; it must not be directly instantiated.")
-        }
-        
         self.localRecordStorage = self.defaultStorage
         self.localMetadataStorage = self.defaultStorage
         self.localCachedRecordChangesStorage = self.defaultStorage
@@ -51,10 +46,6 @@ private class LocalDataCoordinator {
         self.operationQueue.maxConcurrentOperationCount = 1
         self.operationQueue.qualityOfService = .userInteractive
         
-    }
-    
-    private static func type() -> LocalDataCoordinator.Type {
-        return self
     }
     
     
