@@ -8,7 +8,7 @@
 
 import Foundation
 
-class InMemoryLocalRecordStorage: LocalRecordStorage {
+class InMemoryStorage: LocalRecordStorage {
     
     
     // MARK: - Adding & Modifying Records
