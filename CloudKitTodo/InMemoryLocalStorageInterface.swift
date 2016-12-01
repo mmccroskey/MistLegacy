@@ -26,12 +26,13 @@ class InMemoryLocalStorageInterface: LocalStorageInterface {
     
     func addRecord(_ record:Record) {
         self.records[record.identifier] = record
+        self.changedRecordsAwaitingPushToCloud.insert(record)
     }
     
     func addRecords(_ records:Set<Record>) {
         
         for record in records {
-            self.records[record.identifier] = record
+            self.addRecord(record)
         }
         
     }
@@ -41,14 +42,25 @@ class InMemoryLocalStorageInterface: LocalStorageInterface {
     
     func removeRecord(_ record:Record) {
         self.removeRecord(matching: record.identifier)
+        self.deletedRecordsAwaitingPushToCloud.insert(record)
+        self.changedRecordsAwaitingPushToCloud.remove(record)
     }
     
     func removeRecord(matching recordIdentifier:RecordIdentifier) {
-        self.records.removeValue(forKey: recordIdentifier)
+        
+        if let record = self.records[recordIdentifier] {
+            self.removeRecord(record)
+        }
+        
     }
     
     func removeAllRecords() {
+        
+        let allRecordsSet = Set(self.records.values)
+        self.deletedRecordsAwaitingPushToCloud = self.deletedRecordsAwaitingPushToCloud.union(allRecordsSet)
+        
         self.records.removeAll()
+        
     }
     
     
