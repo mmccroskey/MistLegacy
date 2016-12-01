@@ -18,12 +18,7 @@ private enum RecordChangeType {
 
 class DataCoordinator {
     
-    
-    // MARK: - Singleton Instance
-    
-    static let shared = DataCoordinator()
-    
-    
+
     // MARK: - Initializer
     
     init() {
@@ -42,14 +37,41 @@ class DataCoordinator {
         
     }
     
+    private static func type() -> DataCoordinator.Type {
+        return self
+    }
+    
     
     // MARK: - Public Properties
+    
+    static let shared = DataCoordinator()
     
     let defaultStorage: InMemoryStorage = InMemoryStorage()
     
     var localRecordStorage: LocalRecordStorage
     var localMetadataStorage: LocalMetadataStorage
     var localCachedRecordChangesStorage: LocalCachedRecordChangesStorage
+    
+    
+    // MARK: - Private Properties
+    
+    private let operationQueue = OperationQueue()
+    
+    
+    // MARK: - Enqueuing Operations
+    
+    private func addOperation(withExecutionBlock block:(() -> Void), completionBlock:(() -> Void)?=nil) {
+        
+        let operation = BlockOperation { block() }
+        operation.completionBlock = completionBlock
+        
+        if let latestOperation = self.operationQueue.operations.last {
+            operation.addDependency(latestOperation)
+        }
+        
+        self.operationQueue.addOperation(operation)
+        
+    }
     
     
     // MARK: - Fetching Locally-Cached Items
@@ -276,31 +298,6 @@ class DataCoordinator {
             
         }
         
-        
-    }
-    
-    
-    // MARK: - Private Properties
-    
-    private let operationQueue = OperationQueue()
-    
-    
-    // MARK: - Private Functions
-    
-    private static func type() -> DataCoordinator.Type {
-        return self
-    }
-    
-    private func addOperation(withExecutionBlock block:(() -> Void), completionBlock:(() -> Void)?=nil) {
-        
-        let operation = BlockOperation { block() }
-        operation.completionBlock = completionBlock
-        
-        if let latestOperation = self.operationQueue.operations.last {
-            operation.addDependency(latestOperation)
-        }
-        
-        self.operationQueue.addOperation(operation)
         
     }
     
