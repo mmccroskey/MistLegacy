@@ -18,9 +18,44 @@ typealias RefreshCompletion = (([CKDatabaseScope:Bool], Bool, Error?) -> Void)
 class Mist {
     
     
+    // MARK: - Fetching Items
+    
+    static func get(_ identifier:RecordIdentifier, finished:((Record?) -> Void)) {
+        self.localDataCoordinator.retrieveRecord(matching: identifier, retrievalCompleted: finished)
+    }
+    
+    static func find(where filter:((Record) throws -> Bool), finished:(([Record], Error?) -> Void)) {
+        self.localDataCoordinator.retrieveRecords(matching: filter, retrievalCompleted: finished)
+    }
+    
+    static func find(where predicate:NSPredicate, finished:(([Record]) -> Void)) {
+        self.localDataCoordinator.retrieveRecords(matching: predicate, retrievalCompleted: finished)
+    }
+    
+    
+    // MARK: - Modifying Items
+    
+    static func add(_ record:Record) {
+        self.localDataCoordinator.addRecord(record)
+    }
+    
+    static func add(_ records:Set<Record>) {
+        self.localDataCoordinator.addRecords(records)
+    }
+    
+    static func delete(_ record:Record) {
+        self.localDataCoordinator.removeRecord(record)
+    }
+    
+    static func delete(_ records:Set<Record>) {
+        self.localDataCoordinator.removeRecords(records)
+    }
+    
+    
     // MARK: - Private Properties
     
     private static let operationQueue = OperationQueue()
+    private static let localDataCoordinator = LocalDataCoordinator()
     
 }
 
