@@ -13,11 +13,11 @@ protocol LocalCachedRecordChangesStorage {
     
     // MARK: - Caching Record Modifications
     
-    var modifiedRecordsAwaitingPushToCloud: [Record] { get set }
+    var modifiedRecordsAwaitingPushToCloud: Set<Record> { get set }
     
     
     // MARK: - Caching Record Deletions
     
-    var deletedRecordsAwaitingPushToCloud: [Record] { get set }
+    var deletedRecordsAwaitingPushToCloud: Set<Record> { get set }
     
 }

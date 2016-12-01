@@ -20,8 +20,8 @@ class InMemoryStorage: LocalRecordStorage, LocalMetadataStorage, LocalCachedReco
     // MARK: - LocalCachedRecordChangesStorage Protocol Properties
     
     
-    var modifiedRecordsAwaitingPushToCloud: [Record] = []
-    var deletedRecordsAwaitingPushToCloud: [Record] = []
+    var modifiedRecordsAwaitingPushToCloud: Set<Record> = []
+    var deletedRecordsAwaitingPushToCloud: Set<Record> = []
     
     
     // MARK: - LocalRecordStorage Protocol Functions
