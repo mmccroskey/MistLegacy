@@ -431,3 +431,17 @@ private class LocalDataCoordinator {
     }
     
 }
+
+
+
+// MARK: - 
+
+
+
+private class RemoteDataCoordinator {
+    
+    
+    
+}
+
+
