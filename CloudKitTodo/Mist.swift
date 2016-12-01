@@ -56,6 +56,13 @@ class Mist {
     }
     
     
+    // MARK: - Configuration Properties
+    
+    static var localRecordStorage: LocalRecordStorage = InMemoryStorage()
+    static var localMetadataStorage: LocalMetadataStorage = InMemoryStorage()
+    static var localCachedRecordChangesStorage: LocalCachedRecordChangesStorage = InMemoryStorage()
+    
+    
     // MARK: - Protected Functions
     
     fileprivate static func addOperation(withExecutionBlock block:(() -> Void), completionBlock:(() -> Void)?=nil) {
@@ -119,28 +126,6 @@ class Mist {
 private class LocalDataCoordinator {
     
     
-    // MARK: - Initializer
-    
-    init() {
-        
-        self.localRecordStorage = self.defaultStorage
-        self.localMetadataStorage = self.defaultStorage
-        self.localCachedRecordChangesStorage = self.defaultStorage
-        
-    }
-    
-    
-    // MARK: - Public Properties
-    
-    static let shared = LocalDataCoordinator()
-    
-    let defaultStorage: InMemoryStorage = InMemoryStorage()
-    
-    var localRecordStorage: LocalRecordStorage
-    var localMetadataStorage: LocalMetadataStorage
-    var localCachedRecordChangesStorage: LocalCachedRecordChangesStorage
-    
-    
     // MARK: - Private Properties
     
     private var retrievedRecordsCache: [RecordIdentifier : Record] = [:]
@@ -166,7 +151,7 @@ private class LocalDataCoordinator {
                 
             } else {
                 
-                record = self.localRecordStorage.record(matching: identifier)
+                record = Mist.localRecordStorage.record(matching: identifier)
                 self.retrievedRecordsCache[identifier] = record
                 
             }
@@ -195,7 +180,7 @@ private class LocalDataCoordinator {
                     
                 } else {
                     
-                    try records = self.localRecordStorage.records(matching: filter)
+                    try records = Mist.localRecordStorage.records(matching: filter)
                     
                     for record in records {
                         self.retrievedRecordsCache[record.identifier] = record
@@ -230,7 +215,7 @@ private class LocalDataCoordinator {
                 
             } else {
                 
-                records = self.localRecordStorage.records(matching: predicate)
+                records = Mist.localRecordStorage.records(matching: predicate)
                 
                 for record in records {
                     self.retrievedRecordsCache[record.identifier] = record
@@ -275,14 +260,14 @@ private class LocalDataCoordinator {
                     
                 case .addition:
                     self.retrievedRecordsCache[record.identifier] = record
-                    self.localRecordStorage.addRecord(record)
-                    self.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.insert(record)
+                    Mist.localRecordStorage.addRecord(record)
+                    Mist.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.insert(record)
                     
                 case .removal:
                     self.retrievedRecordsCache.removeValue(forKey: record.identifier)
-                    self.localRecordStorage.removeRecord(record)
-                    self.localCachedRecordChangesStorage.deletedRecordsAwaitingPushToCloud.insert(record)
-                    self.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.remove(record)
+                    Mist.localRecordStorage.removeRecord(record)
+                    Mist.localCachedRecordChangesStorage.deletedRecordsAwaitingPushToCloud.insert(record)
+                    Mist.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.remove(record)
                     
                 }
                 
@@ -293,7 +278,6 @@ private class LocalDataCoordinator {
         Mist.addOperation(withExecutionBlock: execution)
         
     }
-    
     
     // MARK: - Updating Local Content with Changes from Remote
     
@@ -310,8 +294,8 @@ private class LocalDataCoordinator {
         
         let scopes: [CKDatabaseScope] = [.public, .shared, .private]
         
-        let unpushedChanges = self.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud
-        let unpushedDeletions = self.localCachedRecordChangesStorage.deletedRecordsAwaitingPushToCloud
+        let unpushedChanges = Mist.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud
+        let unpushedDeletions = Mist.localCachedRecordChangesStorage.deletedRecordsAwaitingPushToCloud
         
         var unpushedChangesDictionary: [CKDatabaseScope : [CKRecord]] = [:]
         var idsOfUnpushedDeletionsDictionary: [CKDatabaseScope : [CKRecordID]] = [:]
@@ -437,6 +421,7 @@ private class LocalDataCoordinator {
 
 
 private class RemoteDataCoordinator {
+    
     
     
     
