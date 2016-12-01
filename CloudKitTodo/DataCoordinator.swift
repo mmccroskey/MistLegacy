@@ -41,7 +41,7 @@ class DataCoordinator {
     // MARK: Fetching Locally-Cached Items
     
     func retrieveAllCachedRecords() -> Set<Record> {
-        return self.localStorageInterface.allRecords()
+        return Set(self.localStorageInterface.allRecords.values)
     }
     
     func retrieveCachedRecord(matching potentiallyStaleInstance:Record) -> Record? {
@@ -49,30 +49,40 @@ class DataCoordinator {
     }
     
     func retrieveCachedRecord(matching identifier:RecordIdentifier) -> Record? {
-        return self.localStorageInterface.record(matching: identifier)
+        return self.localStorageInterface.allRecords[identifier]
     }
     
     
     // MARK: - Making Local Changes
     
     func addRecord(_ record:Record) {
-        self.localStorageInterface.addRecord(record)
+        self.localStorageInterface.allRecords[record.identifier] = record
+        self.localStorageInterface.changedRecordsAwaitingPushToCloud.insert(record)
     }
     
     func addRecords(_ records:Set<Record>) {
-        self.localStorageInterface.addRecords(records)
+        
+        for record in records {
+            self.addRecord(record)
+        }
+        
     }
     
     func removeRecord(_ record:Record) {
-        self.removeRecord(matching: record.identifier)
-    }
-    
-    func removeRecord(matching recordIdentifier:RecordIdentifier) {
-        self.localStorageInterface.removeRecord(matching: recordIdentifier)
+        self.localStorageInterface.allRecords.removeValue(forKey: record.identifier)
+        self.localStorageInterface.deletedRecordsAwaitingPushToCloud.insert(record)
+        self.localStorageInterface.changedRecordsAwaitingPushToCloud.remove(record)
     }
     
     func removeAllRecords() {
-        self.localStorageInterface.removeAllRecords()
+        
+        let allRecordsSet = Set(self.localStorageInterface.allRecords.values)
+        let currentDeletedRecordsSet = self.localStorageInterface.deletedRecordsAwaitingPushToCloud
+        
+        self.localStorageInterface.deletedRecordsAwaitingPushToCloud = currentDeletedRecordsSet.union(allRecordsSet)
+        
+        self.localStorageInterface.allRecords.removeAll()
+        
     }
     
     
