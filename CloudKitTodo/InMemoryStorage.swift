@@ -8,18 +8,35 @@
 
 import Foundation
 
-class InMemoryStorage: LocalRecordStorage {
+class InMemoryStorage: LocalRecordStorage, LocalMetadataStorage, LocalCachedRecordChangesStorage {
     
     
-    // MARK: - Adding & Modifying Records
+    // MARK: - Private Properties
+    
+    private var records: [RecordIdentifier : Record] = [:]
+    private var metadata: [String:Any?] = [:]
+    
+    
+    // MARK: - LocalCachedRecordChangesStorage Protocol Properties
+    
+    
+    var modifiedRecordsAwaitingPushToCloud: [Record] = []
+    var deletedRecordsAwaitingPushToCloud: [Record] = []
+    
+    
+    // MARK: - LocalRecordStorage Protocol Functions
+    
+    
+    
+    // MARK: Adding & Modifying Records
     
     func addRecord(_ record:Record) {
-        self.allRecords[record.identifier] = record
+        self.records[record.identifier] = record
     }
     
     
     
-    // MARK: - Removing Records
+    // MARK: Removing Records
     
     func removeRecord(_ record:Record) -> Bool {
         return self.removeRecord(matching: record.identifier)
@@ -27,29 +44,44 @@ class InMemoryStorage: LocalRecordStorage {
     
     func removeRecord(matching identifier:RecordIdentifier) -> Bool {
         
-        let value = self.allRecords.removeValue(forKey: identifier)
+        let value = self.records.removeValue(forKey: identifier)
         return (value != nil)
         
     }
     
     
-    // MARK: - Finding Records
+    // MARK: Finding Records
     
     func record(matching identifier:RecordIdentifier) -> Record? {
-        return self.allRecords[identifier]
+        return self.records[identifier]
     }
     
     func records(matching filter:((Record) throws -> Bool)) rethrows -> [Record] {
-        return try self.allRecords.values.filter(filter)
+        return try self.records.values.filter(filter)
     }
     
     func records(matching predicate:NSPredicate) -> [Record] {
         return self.records(matching: {  predicate.evaluate(with: $0) })
     }
     
-
-    // MARK: - Private Properties
     
-    private var allRecords: [RecordIdentifier : Record] = [:]
+    // MARK: - LocalMetadataStorage Protocol Functions
+    
+    
+    // MARK: - Getting Values
+    
+    func value(for key:String) -> Any? {
+        return self.metadata[key]
+    }
+    
+    
+    // MARK: - Setting Values
+    
+    func setValue(_ value:Any?, for key:String) -> Bool {
+        
+        self.metadata[key] = value
+        return true
+        
+    }
     
 }
