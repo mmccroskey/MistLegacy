@@ -10,12 +10,7 @@ import Foundation
 import CloudKit
 
 typealias RecordIdentifier = String
-
-enum RecordAccessibility {
-    case publiclyAccessible
-    case accessibleOnlyToCollaborators
-    case accessibleOnlyToCreator
-}
+typealias RecordAccessibility = CKDatabaseScope
 
 class Record: Hashable {
     
