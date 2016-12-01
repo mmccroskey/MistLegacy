@@ -16,7 +16,6 @@
 		8D6B1D9A1DF07B9000E65300 /* LocalMetadataStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6B1D991DF07B9000E65300 /* LocalMetadataStorage.swift */; };
 		8D6B1D9C1DF07DE500E65300 /* LocalCachedRecordChangesStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6B1D9B1DF07DE500E65300 /* LocalCachedRecordChangesStorage.swift */; };
 		8D6B1D9E1DF0CAC000E65300 /* Mist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6B1D9D1DF0CAC000E65300 /* Mist.swift */; };
-		8D8343B71DEF11D8009DF3CC /* LocalDataCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343B61DEF11D8009DF3CC /* LocalDataCoordinator.swift */; };
 		8D8343B91DEF13F1009DF3CC /* Record.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343B81DEF13F1009DF3CC /* Record.swift */; };
 		8D8343BC1DEF191D009DF3CC /* Todo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343BB1DEF191D009DF3CC /* Todo.swift */; };
 		8D8343BE1DEF227C009DF3CC /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343BD1DEF227C009DF3CC /* User.swift */; };
@@ -38,7 +37,6 @@
 		8D6B1D991DF07B9000E65300 /* LocalMetadataStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalMetadataStorage.swift; sourceTree = "<group>"; };
 		8D6B1D9B1DF07DE500E65300 /* LocalCachedRecordChangesStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalCachedRecordChangesStorage.swift; sourceTree = "<group>"; };
 		8D6B1D9D1DF0CAC000E65300 /* Mist.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mist.swift; sourceTree = "<group>"; };
-		8D8343B61DEF11D8009DF3CC /* LocalDataCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalDataCoordinator.swift; sourceTree = "<group>"; };
 		8D8343B81DEF13F1009DF3CC /* Record.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Record.swift; sourceTree = "<group>"; };
 		8D8343BB1DEF191D009DF3CC /* Todo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Todo.swift; sourceTree = "<group>"; };
 		8D8343BD1DEF227C009DF3CC /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
@@ -86,7 +84,6 @@
 				8D171BDD1DEF0FD400EA1597 /* Assets.xcassets */,
 				8D171BDF1DEF0FD400EA1597 /* LaunchScreen.storyboard */,
 				8D171BE21DEF0FD400EA1597 /* Info.plist */,
-				8D8343B61DEF11D8009DF3CC /* LocalDataCoordinator.swift */,
 				8D8343B81DEF13F1009DF3CC /* Record.swift */,
 				8D8343BB1DEF191D009DF3CC /* Todo.swift */,
 				8D8343BD1DEF227C009DF3CC /* User.swift */,
@@ -192,7 +189,6 @@
 				8D6B1D9C1DF07DE500E65300 /* LocalCachedRecordChangesStorage.swift in Sources */,
 				8D6B1D9A1DF07B9000E65300 /* LocalMetadataStorage.swift in Sources */,
 				8D171BD91DEF0FD400EA1597 /* ViewController.swift in Sources */,
-				8D8343B71DEF11D8009DF3CC /* LocalDataCoordinator.swift in Sources */,
 				8D8343BE1DEF227C009DF3CC /* User.swift in Sources */,
 				8D8343B91DEF13F1009DF3CC /* Record.swift in Sources */,
 				8D6B1D9E1DF0CAC000E65300 /* Mist.swift in Sources */,
