@@ -143,8 +143,6 @@ private class LocalDataCoordinator {
     
     // MARK: - Private Properties
     
-    private let operationQueue = OperationQueue()
-    
     private var retrievedRecordsCache: [RecordIdentifier : Record] = [:]
     
     private enum RecordChangeType {
