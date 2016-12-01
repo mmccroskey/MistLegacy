@@ -1,5 +1,5 @@
 //
-//  LocalStorageInterface.swift
+//  LocalRecordStorage.swift
 //  CloudKitTodo
 //
 //  Created by Matthew McCroskey on 11/30/16.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol LocalStorageInterface {
+protocol LocalRecordStorage {
     
     
     // MARK: - Adding & Modifying Records

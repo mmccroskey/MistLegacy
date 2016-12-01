@@ -18,8 +18,8 @@
 		8D8343BC1DEF191D009DF3CC /* Todo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343BB1DEF191D009DF3CC /* Todo.swift */; };
 		8D8343BE1DEF227C009DF3CC /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343BD1DEF227C009DF3CC /* User.swift */; };
 		8D8343C21DEF242B009DF3CC /* NestedRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C11DEF242B009DF3CC /* NestedRecord.swift */; };
-		8D8343C41DEF78D5009DF3CC /* LocalStorageInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C31DEF78D5009DF3CC /* LocalStorageInterface.swift */; };
-		8D8343C61DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C51DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift */; };
+		8D8343C41DEF78D5009DF3CC /* LocalRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C31DEF78D5009DF3CC /* LocalRecordStorage.swift */; };
+		8D8343C61DEF7B80009DF3CC /* InMemoryLocalRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C51DEF7B80009DF3CC /* InMemoryLocalRecordStorage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,8 +37,8 @@
 		8D8343BB1DEF191D009DF3CC /* Todo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Todo.swift; sourceTree = "<group>"; };
 		8D8343BD1DEF227C009DF3CC /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		8D8343C11DEF242B009DF3CC /* NestedRecord.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NestedRecord.swift; sourceTree = "<group>"; };
-		8D8343C31DEF78D5009DF3CC /* LocalStorageInterface.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalStorageInterface.swift; sourceTree = "<group>"; };
-		8D8343C51DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InMemoryLocalStorageInterface.swift; sourceTree = "<group>"; };
+		8D8343C31DEF78D5009DF3CC /* LocalRecordStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalRecordStorage.swift; sourceTree = "<group>"; };
+		8D8343C51DEF7B80009DF3CC /* InMemoryLocalRecordStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InMemoryLocalRecordStorage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,8 +85,8 @@
 				8D8343BB1DEF191D009DF3CC /* Todo.swift */,
 				8D8343BD1DEF227C009DF3CC /* User.swift */,
 				8D8343C11DEF242B009DF3CC /* NestedRecord.swift */,
-				8D8343C31DEF78D5009DF3CC /* LocalStorageInterface.swift */,
-				8D8343C51DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift */,
+				8D8343C31DEF78D5009DF3CC /* LocalRecordStorage.swift */,
+				8D8343C51DEF7B80009DF3CC /* InMemoryLocalRecordStorage.swift */,
 			);
 			path = CloudKitTodo;
 			sourceTree = "<group>";
@@ -185,8 +185,8 @@
 				8D8343BE1DEF227C009DF3CC /* User.swift in Sources */,
 				8D8343B91DEF13F1009DF3CC /* Record.swift in Sources */,
 				8D171BD71DEF0FD400EA1597 /* AppDelegate.swift in Sources */,
-				8D8343C41DEF78D5009DF3CC /* LocalStorageInterface.swift in Sources */,
-				8D8343C61DEF7B80009DF3CC /* InMemoryLocalStorageInterface.swift in Sources */,
+				8D8343C41DEF78D5009DF3CC /* LocalRecordStorage.swift in Sources */,
+				8D8343C61DEF7B80009DF3CC /* InMemoryLocalRecordStorage.swift in Sources */,
 				8D8343BC1DEF191D009DF3CC /* Todo.swift in Sources */,
 				8D8343C21DEF242B009DF3CC /* NestedRecord.swift in Sources */,
 			);
