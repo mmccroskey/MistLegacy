@@ -10,9 +10,22 @@ import Foundation
 
 protocol LocalStorageInterface {
     
-    var allRecords: [RecordIdentifier : Record] { get set }
     
-    var changedRecordsAwaitingPushToCloud: Set<Record> { get set }
-    var deletedRecordsAwaitingPushToCloud: Set<Record> { get set }
+    // MARK: - Adding & Modifying Records
+    
+    func addRecord(_ record:Record)
+    
+    
+    // MARK: - Removing Records
+    
+    func removeRecord(_ record:Record) -> Bool
+    func removeRecord(matching identifier:RecordIdentifier) -> Bool
+    
+    
+    // MARK: - Finding Records
+    
+    func record(matching identifier:RecordIdentifier) -> Record?
+    func records(matching filter:((Record) throws -> Bool)) rethrows -> [Record]
+    func records(matching predicate:NSPredicate) -> [Record]
     
 }
