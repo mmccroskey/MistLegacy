@@ -15,6 +15,10 @@ typealias RefreshCompletion = (([CKDatabaseScope:Bool], Bool, Error?) -> Void)
 
 
 
+// MARK: -
+
+
+
 class Mist {
     
     
@@ -52,20 +56,65 @@ class Mist {
     }
     
     
+    // MARK: - Protected Functions
+    
+    fileprivate static func addOperation(withExecutionBlock block:(() -> Void), completionBlock:(() -> Void)?=nil) {
+        
+        let operation = BlockOperation { block() }
+        operation.completionBlock = completionBlock
+        
+        if let latestOperation = self.queue.lastOperation() {
+            operation.addDependency(latestOperation)
+        }
+
+        self.queue.addOperation(operation)
+    
+    }
+
     // MARK: - Private Properties
     
-    private static let operationQueue = OperationQueue()
+    private static let queue = Queue()
     private static let localDataCoordinator = LocalDataCoordinator()
+    
+    
+    // MARK: - Private Classes
+    
+    private class Queue {
+        
+        
+        // MARK: - Initializer
+        
+        init() {
+            
+            self.operationQueue.maxConcurrentOperationCount = 1
+            self.operationQueue.qualityOfService = .userInteractive
+            
+        }
+        
+        
+        // MARK: - Private Properties
+        
+        private let operationQueue = OperationQueue()
+        
+        
+        // MARK: - Public Functions
+        
+        func addOperation(_ operation:Operation) {
+            self.operationQueue.addOperation(operation)
+        }
+        
+        func lastOperation() -> Operation? {
+            return self.operationQueue.operations.last
+        }
+        
+    }
     
 }
 
 
 
+// MARK: -
 
-private enum RecordChangeType {
-    case addition
-    case removal
-}
 
 private class LocalDataCoordinator {
     
@@ -77,9 +126,6 @@ private class LocalDataCoordinator {
         self.localRecordStorage = self.defaultStorage
         self.localMetadataStorage = self.defaultStorage
         self.localCachedRecordChangesStorage = self.defaultStorage
-        
-        self.operationQueue.maxConcurrentOperationCount = 1
-        self.operationQueue.qualityOfService = .userInteractive
         
     }
     
@@ -101,21 +147,11 @@ private class LocalDataCoordinator {
     
     private var retrievedRecordsCache: [RecordIdentifier : Record] = [:]
     
-    
-    // MARK: - Enqueuing Operations
-    
-    private func addOperation(withExecutionBlock block:(() -> Void), completionBlock:(() -> Void)?=nil) {
-        
-        let operation = BlockOperation { block() }
-        operation.completionBlock = completionBlock
-        
-        if let latestOperation = self.operationQueue.operations.last {
-            operation.addDependency(latestOperation)
-        }
-        
-        self.operationQueue.addOperation(operation)
-        
+    private enum RecordChangeType {
+        case addition
+        case removal
     }
+    
     
     
     // MARK: - Fetching Locally-Cached Items
@@ -141,7 +177,7 @@ private class LocalDataCoordinator {
         
         let completion = { retrievalCompleted(record) }
         
-        self.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        Mist.addOperation(withExecutionBlock: execution, completionBlock: completion)
         
     }
     
@@ -179,7 +215,7 @@ private class LocalDataCoordinator {
         
         let completion = { retrievalCompleted(records, error) }
         
-        self.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        Mist.addOperation(withExecutionBlock: execution, completionBlock: completion)
         
     }
     
@@ -208,7 +244,7 @@ private class LocalDataCoordinator {
         
         let completion = { retrievalCompleted(records) }
         
-        self.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        Mist.addOperation(withExecutionBlock: execution, completionBlock: completion)
         
     }
     
@@ -256,7 +292,7 @@ private class LocalDataCoordinator {
             
         }
         
-        self.addOperation(withExecutionBlock: execution)
+        Mist.addOperation(withExecutionBlock: execution)
         
     }
     
