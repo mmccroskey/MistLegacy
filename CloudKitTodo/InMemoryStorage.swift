@@ -38,15 +38,12 @@ class InMemoryStorage: LocalRecordStorage, LocalMetadataStorage, LocalCachedReco
     
     // MARK: Removing Records
     
-    func removeRecord(_ record:Record) -> Bool {
+    func removeRecord(_ record:Record) {
         return self.removeRecord(matching: record.identifier)
     }
     
-    func removeRecord(matching identifier:RecordIdentifier) -> Bool {
-        
-        let value = self.records.removeValue(forKey: identifier)
-        return (value != nil)
-        
+    func removeRecord(matching identifier:RecordIdentifier) {
+        self.records.removeValue(forKey: identifier)
     }
     
     

@@ -18,8 +18,8 @@ protocol LocalRecordStorage {
     
     // MARK: - Removing Records
     
-    func removeRecord(_ record:Record) -> Bool
-    func removeRecord(matching identifier:RecordIdentifier) -> Bool
+    func removeRecord(_ record:Record)
+    func removeRecord(matching identifier:RecordIdentifier)
     
     
     // MARK: - Finding Records
