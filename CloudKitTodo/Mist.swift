@@ -279,6 +279,17 @@ private class LocalDataCoordinator {
         
     }
     
+}
+
+
+
+// MARK: - 
+
+
+
+private class RemoteDataCoordinator {
+    
+    
     // MARK: - Updating Local Content with Changes from Remote
     
     func performCloudRefreshOfPublicData(inZone zone:CKRecordZone, completion:RefreshCompletion) {}
@@ -411,19 +422,6 @@ private class LocalDataCoordinator {
         
         
     }
-    
-}
-
-
-
-// MARK: - 
-
-
-
-private class RemoteDataCoordinator {
-    
-    
-    
     
 }
 
