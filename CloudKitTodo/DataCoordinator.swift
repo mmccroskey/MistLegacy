@@ -11,6 +11,11 @@ import CloudKit
 
 typealias RefreshCompletion = (([CKDatabaseScope:Bool], Bool, Error?) -> Void)
 
+private enum RecordChangeType {
+    case addition
+    case removal
+}
+
 class DataCoordinator {
     
     
@@ -28,60 +33,115 @@ class DataCoordinator {
             fatalError("DataCoordinator is an abstract class; it must not be directly instantiated.")
         }
         
-        self.localStorageInterface = InMemoryLocalStorageInterface()
+        self.localRecordStorage = self.defaultStorage
+        self.localMetadataStorage = self.defaultStorage
+        self.localCachedRecordChangesStorage = self.defaultStorage
+        
+        self.operationQueue.maxConcurrentOperationCount = 1
+        self.operationQueue.qualityOfService = .userInteractive
         
     }
     
     
     // MARK: - Public Properties
     
-    var localStorageInterface: LocalStorageInterface
+    let defaultStorage: InMemoryStorage = InMemoryStorage()
+    
+    var localRecordStorage: LocalRecordStorage
+    var localMetadataStorage: LocalMetadataStorage
+    var localCachedRecordChangesStorage: LocalCachedRecordChangesStorage
     
     
-    // MARK: Fetching Locally-Cached Items
+    // MARK: - Fetching Locally-Cached Items
     
-    func retrieveAllCachedRecords() -> Set<Record> {
-        return Set(self.localStorageInterface.allRecords.values)
+    func retrieveRecord(matching identifier:RecordIdentifier, retrievalCompleted:((Record?) -> Void)) {
+        
+        var record: Record? = nil
+        let execution = { record = self.localRecordStorage.record(matching: identifier) }
+        let completion = { retrievalCompleted(record) }
+        
+        self.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        
     }
     
-    func retrieveCachedRecord(matching potentiallyStaleInstance:Record) -> Record? {
-        return self.retrieveCachedRecord(matching: potentiallyStaleInstance.identifier)
+    func retrieveRecords(matching filter:((Record) throws -> Bool), retrievalCompleted:(([Record], Error?) -> Void)) {
+        
+        var records: [Record] = []
+        var error: Error?
+        
+        let execution = {
+            
+            do {
+                
+                try records = self.localRecordStorage.records(matching: filter)
+                
+            } catch let fetchError {
+                
+                error = fetchError
+                
+            }
+        
+        }
+        
+        let completion = { retrievalCompleted(records, error) }
+        
+        self.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        
     }
     
-    func retrieveCachedRecord(matching identifier:RecordIdentifier) -> Record? {
-        return self.localStorageInterface.allRecords[identifier]
+    func retrieveRecords(matching predicate:NSPredicate, retrievalCompleted:(([Record]) -> Void)) {
+        
+        var records: [Record] = []
+        let execution = { records = self.localRecordStorage.records(matching: predicate) }
+        let completion = { retrievalCompleted(records) }
+        
+        self.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        
     }
     
     
     // MARK: - Making Local Changes
     
     func addRecord(_ record:Record) {
-        self.localStorageInterface.allRecords[record.identifier] = record
-        self.localStorageInterface.changedRecordsAwaitingPushToCloud.insert(record)
+        self.addRecords(Set([record]))
     }
     
     func addRecords(_ records:Set<Record>) {
-        
-        for record in records {
-            self.addRecord(record)
-        }
-        
+        self.performChange(ofType: .addition, on: records)
     }
     
     func removeRecord(_ record:Record) {
-        self.localStorageInterface.allRecords.removeValue(forKey: record.identifier)
-        self.localStorageInterface.deletedRecordsAwaitingPushToCloud.insert(record)
-        self.localStorageInterface.changedRecordsAwaitingPushToCloud.remove(record)
+        self.removeRecords(Set([record]))
     }
     
-    func removeAllRecords() {
+    func removeRecords(_ records:Set<Record>) {
+        self.performChange(ofType: .removal, on: records)
+    }
+    
+    private func performChange(ofType changeType:RecordChangeType, on records:Set<Record>) {
         
-        let allRecordsSet = Set(self.localStorageInterface.allRecords.values)
-        let currentDeletedRecordsSet = self.localStorageInterface.deletedRecordsAwaitingPushToCloud
+        let execution = {
+            
+            for record in records {
+                
+                switch changeType {
+                    
+                case .addition:
+                    self.localRecordStorage.addRecord(record)
+                    self.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.insert(record)
+                    
+                case .removal:
+                    self.localRecordStorage.removeRecord(record)
+                    self.localCachedRecordChangesStorage.deletedRecordsAwaitingPushToCloud.insert(record)
+                    self.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.remove(record)
+                    
+                }
+                
+            }
+            
+        }
         
-        self.localStorageInterface.deletedRecordsAwaitingPushToCloud = currentDeletedRecordsSet.union(allRecordsSet)
-        
-        self.localStorageInterface.allRecords.removeAll()
+        self.addOperation(withExecutionBlock: execution)
         
     }
     
@@ -101,8 +161,8 @@ class DataCoordinator {
         
         let scopes: [CKDatabaseScope] = [.public, .shared, .private]
         
-        let unpushedChanges = self.localStorageInterface.changedRecordsAwaitingPushToCloud
-        let unpushedDeletions = self.localStorageInterface.deletedRecordsAwaitingPushToCloud
+        let unpushedChanges = self.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud
+        let unpushedDeletions = self.localCachedRecordChangesStorage.deletedRecordsAwaitingPushToCloud
         
         var unpushedChangesDictionary: [CKDatabaseScope : [CKRecord]] = [:]
         var idsOfUnpushedDeletionsDictionary: [CKDatabaseScope : [CKRecordID]] = [:]
@@ -165,9 +225,9 @@ class DataCoordinator {
             
             fatalError(
                 "The keys for the \(name) dictionary and the scopes dictionary must match, " +
-                    "but they don't. Here are those dictionaries:\n" +
-                    "\(name): \(dictionary)\n" +
-                    "scopes: \(scopes)\n"
+                "but they don't. Here are those dictionaries:\n" +
+                "\(name): \(dictionary)\n" +
+                "scopes: \(scopes)\n"
             )
             
         }
@@ -220,10 +280,28 @@ class DataCoordinator {
     }
     
     
+    // MARK: - Private Properties
+    
+    private let operationQueue = OperationQueue()
+    
+    
     // MARK: - Private Functions
     
     private static func type() -> DataCoordinator.Type {
         return self
+    }
+    
+    private func addOperation(withExecutionBlock block:(() -> Void), completionBlock:(() -> Void)?=nil) {
+        
+        let operation = BlockOperation { block() }
+        operation.completionBlock = completionBlock
+        
+        if let latestOperation = self.operationQueue.operations.last {
+            operation.addDependency(latestOperation)
+        }
+        
+        self.operationQueue.addOperation(operation)
+        
     }
     
 }
