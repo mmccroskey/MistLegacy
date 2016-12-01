@@ -1,5 +1,5 @@
 //
-//  DataCoordinator.swift
+//  LocalDataCoordinator.swift
 //  CloudKitTodo
 //
 //  Created by Matthew McCroskey on 11/30/16.
@@ -16,16 +16,16 @@ private enum RecordChangeType {
     case removal
 }
 
-class DataCoordinator {
+class LocalDataCoordinator {
     
 
     // MARK: - Initializer
     
     init() {
         
-        let typeString = String(describing: DataCoordinator.type())
-        guard typeString != "DataCoordinator" else {
-            fatalError("DataCoordinator is an abstract class; it must not be directly instantiated.")
+        let typeString = String(describing: LocalDataCoordinator.type())
+        guard typeString != "LocalDataCoordinator" else {
+            fatalError("LocalDataCoordinator is an abstract class; it must not be directly instantiated.")
         }
         
         self.localRecordStorage = self.defaultStorage
@@ -37,14 +37,14 @@ class DataCoordinator {
         
     }
     
-    private static func type() -> DataCoordinator.Type {
+    private static func type() -> LocalDataCoordinator.Type {
         return self
     }
     
     
     // MARK: - Public Properties
     
-    static let shared = DataCoordinator()
+    static let shared = LocalDataCoordinator()
     
     let defaultStorage: InMemoryStorage = InMemoryStorage()
     
