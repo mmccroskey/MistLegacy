@@ -10,7 +10,6 @@ import Foundation
 import CloudKit
 
 typealias RecordIdentifier = String
-typealias RecordAccessibility = CKDatabaseScope
 
 internal struct RelatedRecordData {
     
@@ -24,14 +23,14 @@ class Record: Hashable {
     
     // MARK: - Initializers
     
-    init(accessibility:RecordAccessibility, recordZone:CKRecordZone) {
+    init(databaseWhereStored:CKDatabaseScope, recordZone:CKRecordZone) {
         
         let typeString = String(describing: Record.type())
         guard typeString != "Record" else {
             fatalError("Record is an abstract class; it must not be directly instantiated.")
         }
         
-        self.accessibility = accessibility
+        self.databaseWhereStored = databaseWhereStored
         self.recordZone = recordZone
         
         self.identifier = UUID().uuidString as RecordIdentifier
@@ -55,7 +54,7 @@ class Record: Hashable {
     
     // MARK: - Public Properties
     
-    let accessibility: RecordAccessibility
+    let databaseWhereStored: CKDatabaseScope
     let recordZone: CKRecordZone
     
     var typeString: String {

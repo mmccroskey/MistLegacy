@@ -18,7 +18,7 @@ class NestedRecord: Record {
         
         self.parent = parent
         
-        super.init(accessibility: parent.accessibility, recordZone: parent.recordZone)
+        super.init(databaseWhereStored: parent.databaseWhereStored, recordZone: parent.recordZone)
         
         self.backingRemoteRecord.setParent(parent.backingRemoteRecord)
         
