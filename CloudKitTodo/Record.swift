@@ -12,6 +12,13 @@ import CloudKit
 typealias RecordIdentifier = String
 typealias RecordAccessibility = CKDatabaseScope
 
+internal struct RelatedRecordData {
+    
+    let identifier: RecordIdentifier
+    let action: CKReferenceAction
+    
+}
+
 class Record: Hashable {
     
     
@@ -31,6 +38,17 @@ class Record: Hashable {
         
         let recordID = CKRecordID(recordName: self.identifier)
         self.backingRemoteRecord = CKRecord(recordType: typeString, recordID: recordID)
+        
+        for key in self.backingRemoteRecord.allKeys() {
+            
+            if let reference = self.backingRemoteRecord.object(forKey: key) as? CKReference {
+                
+                let relatedRecordData = RelatedRecordData(identifier: reference.recordID.recordName, action: reference.referenceAction)
+                self.relatedRecordDataSetKeyPairs[key] = relatedRecordData
+                
+            }
+            
+        }
         
     }
     
@@ -53,94 +71,126 @@ class Record: Hashable {
     let identifier: RecordIdentifier
     
     
-    // MARK: - Public Functions
-    
-    func value(forKey key:String) -> Any? {
-        
-        guard let value = self.backingRemoteRecord.value(forKey: key) else {
-            return nil
-        }
-        
-        if let reference = value as? CKReference {
-            
-            guard let value = DataCoordinator.shared.retrieveCachedRecord(matching: reference.recordID.recordName) else {
-                
-                fatalError(
-                    "ERROR: When attempting to get the value for the key \(key) in the backingRemoteRecord, " +
-                    "we found a CKReference, but we have no object for its corresponding identifier " +
-                    "in our local store. Here's the Record we were searching: \(self)"
-                )
-                
-            }
-            
-            return value
-            
-        } else {
-            
-            return value
-            
-        }
-        
-    }
-    
-    func setValue(_ value:Any?, forKey key:String) {
-        
-        guard !(value is Record) else {
-            fatalError("To set another RelatedRecord as the value for a key on Record, please use the setRelatedRecord:forKey: function.")
-        }
-        
-        guard value is CKRecordValue else {
-            fatalError("ERROR: Every value of Record must conform to CKRecordValue. The value you've provided does not; here it is: \(value)")
-        }
-        
-        self.backingRemoteRecord.setValue(value, forKey: key)
-        
-    }
-    
-    func setRelatedRecord(_ relatedRecord:Record, forKey key:String, withReferenceAction action:CKReferenceAction) {
-        
-        // First make sure the CKReference exists and is properly configured
-        
-        func configureNewReference() {
-            let newReference = CKReference(record: relatedRecord.backingRemoteRecord, action: action)
-            self.backingRemoteRecord.setValue(newReference, forKey: key)
-        }
-        
-        if let extantObject = self.backingRemoteRecord.value(forKey: key) {
-            
-            // Ensure we aren't overwriting a basic property
-            guard let extantReference = extantObject as? CKReference else {
-                
-                fatalError(
-                    "ERROR: You're attempting to store a Record (aka a relation) " +
-                    "under a key where a non-relation is currently stored. This is " +
-                    "not allowed. Here are the relevant details:\n" +
-                    "KEY: \(key)\n" +
-                    "CURRENT VALUE: \(extantObject)\n" +
-                    "PROPOSED NEW VALUE: \(value)\n" +
-                    "RECORD BEING MODIFIED: \(self)\n"
-                )
-                
-            }
-            
-            // Ensure the stored reference is pointing to the right object
-            if extantReference.recordID.recordName != relatedRecord.backingRemoteRecord.recordID.recordName {
-                configureNewReference()
-            }
-            
-        } else {
-            configureNewReference()
-        }
-        
-        // Then make sure the relatedRecord is saved in the DataCoordinator
-        DataCoordinator.shared.addRecord(relatedRecord)
-        
-    }
-    
-    
-    // MARK: - Private Properties
+    // MARK: - Protected Properties
     
     internal let backingRemoteRecord: CKRecord
+    internal var relatedRecordsCache: [String : Record] = [:]
+    internal var relatedRecordDataSetKeyPairs: [String : RelatedRecordData] = [:]
+    
+    
+    // MARK: - Interacting with Record Properties
+    
+    func object(forKey key:String) -> CKRecordValue? {
+        
+        if let object = self.backingRemoteRecord.object(forKey: key) {
+            
+            guard !(object is CKReference) else {
+                
+                fatalError(
+                    "Do not fetch relationships using object(forKey:) -- use " +
+                    "relatedRecord(forKey:) instead. Here are the object and key in question:\n" +
+                    "OBJECT: \(self)\n" +
+                    "KEY: \(key)"
+                )
+                
+            }
+            
+            return object
+            
+        }
+
+        return nil
+        
+    }
+    
+    func setObject(_ object:CKRecordValue?, forKey key:String) {
+        
+        guard !(object is CKReference) else {
+            
+            fatalError(
+                "Do not set relationships using setObject(forKey:) -- use " +
+                 "setRelatedRecord(forKey:withReferenceAction:) instead. Here are the object and key in question:\n" +
+                 "OBJECT: \(self)\n" +
+                 "KEY: \(key)"
+            )
+            
+        }
+        
+        self.backingRemoteRecord.setObject(object, forKey: key)
+        
+    }
+    
+    
+    // MARK: - Interacting with Record Relationships
+    
+    func relatedRecord(forKey key:String) -> Record? {
+        return self.relatedRecordsCache[key]
+    }
+    
+    func setRelatedRecord(_ relatedRecord:Record?, forKey key:String, withReferenceAction action:CKReferenceAction) {
+        
+        func configureReference(using record:Record?) {
+            
+            if let record = record {
+                
+                let newReference = CKReference(record: record.backingRemoteRecord, action: action)
+                self.backingRemoteRecord.setObject(newReference, forKey: key)
+                
+            } else {
+                
+                self.backingRemoteRecord.setObject(nil, forKey: key)
+                
+            }
+            
+        }
+        
+        if let relatedRecord = relatedRecord {
+            
+            // First make sure the CKReference exists and is properly configured
+            if let extantObject = self.backingRemoteRecord.object(forKey: key) {
+                
+                // Ensure we aren't overwriting a basic property
+                guard let extantReference = extantObject as? CKReference else {
+                    
+                    fatalError(
+                        "ERROR: You're attempting to store a Record (aka a relation) " +
+                        "under a key where a non-relation is currently stored. This is " +
+                        "not allowed. Here are the relevant details:\n" +
+                        "KEY: \(key)\n" +
+                        "CURRENT VALUE: \(extantObject)\n" +
+                        "PROPOSED NEW OBJECT: \(object)\n" +
+                        "RECORD BEING MODIFIED: \(self)\n"
+                    )
+                    
+                }
+                
+                // Ensure the stored reference is pointing to the right object
+                if extantReference.recordID.recordName != relatedRecord.backingRemoteRecord.recordID.recordName {
+                    configureReference(using: relatedRecord)
+                }
+                
+            } else {
+                configureReference(using: relatedRecord)
+            }
+            
+            // Add it to our internal cache of related Records
+            self.relatedRecordsCache[key] = relatedRecord
+            
+            // Ensure the Record exists in Mist
+            Mist.add(relatedRecord)
+            
+            
+        } else {
+            
+            // Remove the CKReference if it exists
+            configureReference(using: nil)
+            
+            // Remove it from our internal cache of related Records
+            self.relatedRecordsCache.removeValue(forKey: key)
+            
+        }
+        
+    }
     
     
     // MARK: - Private Functions

@@ -24,16 +24,16 @@ class Mist {
     
     // MARK: - Fetching Items
     
-    static func get(_ identifier:RecordIdentifier, finished:((Record?) -> Void)) {
-        self.localDataCoordinator.retrieveRecord(matching: identifier, retrievalCompleted: finished)
+    static func get(_ identifier:RecordIdentifier, fetchDepth:Int = -1, finished:((Record?) -> Void)) {
+        self.localDataCoordinator.retrieveRecord(matching: identifier, fetchDepth:fetchDepth, retrievalCompleted: finished)
     }
     
-    static func find(where filter:((Record) throws -> Bool), finished:(([Record], Error?) -> Void)) {
-        self.localDataCoordinator.retrieveRecords(matching: filter, retrievalCompleted: finished)
+    static func find(where filter:((Record) throws -> Bool), fetchDepth:Int = -1, finished:(([Record], Error?) -> Void)) {
+        self.localDataCoordinator.retrieveRecords(matching: filter, fetchDepth:fetchDepth, retrievalCompleted: finished)
     }
     
-    static func find(where predicate:NSPredicate, finished:(([Record]) -> Void)) {
-        self.localDataCoordinator.retrieveRecords(matching: predicate, retrievalCompleted: finished)
+    static func find(where predicate:NSPredicate, fetchDepth:Int = -1, finished:(([Record]) -> Void)) {
+        self.localDataCoordinator.retrieveRecords(matching: predicate, fetchDepth:fetchDepth, retrievalCompleted: finished)
     }
     
     
@@ -146,10 +146,41 @@ private class LocalDataCoordinator {
     }
     
     
+    func associateRelatedRecords(for record:Record?, using fetchDepth:Int) {
+        
+        if let record = record, fetchDepth != 0 {
+            
+            for relatedRecordDataSetKeyPair in record.relatedRecordDataSetKeyPairs {
+                
+                let propertyName = relatedRecordDataSetKeyPair.key
+                let identifier = relatedRecordDataSetKeyPair.value.identifier
+                let action = relatedRecordDataSetKeyPair.value.action
+                
+                let newFetchDepth: Int
+                if fetchDepth > 0 {
+                    newFetchDepth = (fetchDepth - 1)
+                } else {
+                    newFetchDepth = fetchDepth
+                }
+                
+                self.retrieveRecord(matching: identifier, fetchDepth:newFetchDepth, retrievalCompleted: { (fetchedRecord) in
+                    
+                    if let relatedRecord = fetchedRecord {
+                        record.setRelatedRecord(relatedRecord, forKey: propertyName, withReferenceAction: action)
+                    }
+                    
+                })
+                
+            }
+            
+        }
+        
+    }
+    
     
     // MARK: - Fetching Locally-Cached Items
     
-    func retrieveRecord(matching identifier:RecordIdentifier, retrievalCompleted:((Record?) -> Void)) {
+    func retrieveRecord(matching identifier:RecordIdentifier, fetchDepth:Int, retrievalCompleted:((Record?) -> Void)) {
         
         var record: Record? = nil
         
@@ -166,6 +197,8 @@ private class LocalDataCoordinator {
                 
             }
             
+            self.associateRelatedRecords(for: record, using: fetchDepth)
+            
         }
         
         let completion = { retrievalCompleted(record) }
@@ -174,7 +207,7 @@ private class LocalDataCoordinator {
         
     }
     
-    func retrieveRecords(matching filter:((Record) throws -> Bool), retrievalCompleted:(([Record], Error?) -> Void)) {
+    func retrieveRecords(matching filter:((Record) throws -> Bool), fetchDepth:Int, retrievalCompleted:(([Record], Error?) -> Void)) {
         
         var records: [Record] = []
         var error: Error?
@@ -198,6 +231,10 @@ private class LocalDataCoordinator {
                     
                 }
                 
+                for record in records {
+                    self.associateRelatedRecords(for: record, using: fetchDepth)
+                }
+                
             } catch let fetchError {
                 
                 error = fetchError
@@ -212,7 +249,7 @@ private class LocalDataCoordinator {
         
     }
     
-    func retrieveRecords(matching predicate:NSPredicate, retrievalCompleted:(([Record]) -> Void)) {
+    func retrieveRecords(matching predicate:NSPredicate, fetchDepth:Int, retrievalCompleted:(([Record]) -> Void)) {
         
         var records: [Record] = []
         
@@ -231,6 +268,10 @@ private class LocalDataCoordinator {
                     self.retrievedRecordsCache[record.identifier] = record
                 }
                 
+            }
+            
+            for record in records {
+                self.associateRelatedRecords(for: record, using: fetchDepth)
             }
             
         }
