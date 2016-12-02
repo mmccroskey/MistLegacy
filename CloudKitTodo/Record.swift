@@ -23,22 +23,22 @@ class Record: Hashable {
     
     // MARK: - Initializer
     
-    init(databaseWhereStored:CKDatabaseScope, backingRemoteRecord:CKRecord?=nil) {
+    internal init(backingRemoteRecord:CKRecord?=nil) {
         
         let typeString = String(describing: Record.type())
         guard typeString != "Record" else {
             fatalError("Record is an abstract class; it must not be directly instantiated.")
         }
         
-        self.identifier = UUID().uuidString as RecordIdentifier
-        
-        self.databaseWhereStored = databaseWhereStored
-        
         if let backingRemoteRecord = backingRemoteRecord {
+            
+            self.identifier = backingRemoteRecord.recordID.recordName
             
             self.backingRemoteRecord = backingRemoteRecord
             
         } else {
+            
+            self.identifier = UUID().uuidString as RecordIdentifier
             
             let recordID = CKRecordID(recordName: self.identifier)
             self.backingRemoteRecord = CKRecord(recordType: typeString, recordID: recordID)
@@ -61,7 +61,17 @@ class Record: Hashable {
     
     // MARK: - Public Properties
     
-    let databaseWhereStored: CKDatabaseScope
+    var parent: Record? {
+        
+        willSet {
+            
+            if let parent = newValue {
+                Record.ensureDatabasesAndRecordZonesMatch(between: parent, and: self)
+            }
+            
+        }
+        
+    }
     
     var typeString: String {
         
@@ -78,18 +88,22 @@ class Record: Hashable {
     
     // MARK: - Protected Properties
     
+    internal var databaseWhereStored: CKDatabaseScope?
+    internal var recordZone: CKRecordZone?
+    
     internal let backingRemoteRecord: CKRecord
+    
     internal var relatedRecordsCache: [String : Record] = [:]
     internal var relatedRecordDataSetKeyPairs: [String : RelatedRecordData] = [:]
     
     
     // MARK: - Interacting with Record Properties
     
-    func object(forKey key:String) -> CKRecordValue? {
+    func property(forKey key:String) -> CKRecordValue? {
         
-        if let object = self.backingRemoteRecord.object(forKey: key) {
+        if let property = self.backingRemoteRecord.object(forKey: key) {
             
-            guard !(object is CKReference) else {
+            guard !(property is CKReference) else {
                 
                 fatalError(
                     "Do not fetch relationships using object(forKey:) -- use " +
@@ -100,7 +114,7 @@ class Record: Hashable {
                 
             }
             
-            return object
+            return property
             
         }
 
@@ -108,9 +122,9 @@ class Record: Hashable {
         
     }
     
-    func setObject(_ object:CKRecordValue?, forKey key:String) {
+    func setProperty(_ property:CKRecordValue?, forKey key:String) {
         
-        guard !(object is CKReference) else {
+        guard !(property is CKReference) else {
             
             fatalError(
                 "Do not set relationships using setObject(forKey:) -- use " +
@@ -121,7 +135,7 @@ class Record: Hashable {
             
         }
         
-        self.backingRemoteRecord.setObject(object, forKey: key)
+        self.backingRemoteRecord.setObject(property, forKey: key)
         
     }
     
@@ -134,11 +148,11 @@ class Record: Hashable {
     
     func setRelatedRecord(_ relatedRecord:Record?, forKey key:String, withReferenceAction action:CKReferenceAction) {
         
-        func configureReference(using record:Record?) {
+        func configureReference() {
             
-            if let record = record {
+            if let relatedRecord = relatedRecord {
                 
-                let newReference = CKReference(record: record.backingRemoteRecord, action: action)
+                let newReference = CKReference(record: relatedRecord.backingRemoteRecord, action: action)
                 self.backingRemoteRecord.setObject(newReference, forKey: key)
                 
             } else {
@@ -151,10 +165,8 @@ class Record: Hashable {
         
         if let relatedRecord = relatedRecord {
             
-            // First make sure the CKReference exists and is properly configured
             if let extantObject = self.backingRemoteRecord.object(forKey: key) {
                 
-                // Ensure we aren't overwriting a basic property
                 guard let extantReference = extantObject as? CKReference else {
                     
                     fatalError(
@@ -163,32 +175,28 @@ class Record: Hashable {
                         "not allowed. Here are the relevant details:\n" +
                         "KEY: \(key)\n" +
                         "CURRENT VALUE: \(extantObject)\n" +
-                        "PROPOSED NEW OBJECT: \(object)\n" +
+                        "PROPOSED NEW OBJECT: \(relatedRecord)\n" +
                         "RECORD BEING MODIFIED: \(self)\n"
                     )
                     
                 }
                 
-                // Ensure the stored reference is pointing to the right object
                 if extantReference.recordID.recordName != relatedRecord.backingRemoteRecord.recordID.recordName {
-                    configureReference(using: relatedRecord)
+                    configureReference()
                 }
                 
             } else {
-                configureReference(using: relatedRecord)
+                configureReference()
             }
             
-            // Add it to our internal cache of related Records
+            Record.ensureDatabasesAndRecordZonesMatch(between: self, and: relatedRecord)
+            
             self.relatedRecordsCache[key] = relatedRecord
-            
-            // Ensure the Record exists in Mist
-            Mist.add(relatedRecord)
-            
             
         } else {
             
             // Remove the CKReference if it exists
-            configureReference(using: nil)
+            configureReference()
             
             // Remove it from our internal cache of related Records
             self.relatedRecordsCache.removeValue(forKey: key)
@@ -202,6 +210,35 @@ class Record: Hashable {
     
     internal static func type() -> Record.Type {
         return self
+    }
+    
+    internal static func ensureDatabasesAndRecordZonesMatch(between providingRecord:Record, and dependentRecord:Record) {
+        
+        func mismatchFatalError(with typeName:String) -> Never {
+            
+            fatalError(
+                "ERROR: A dependent Record must be in the same \(typeName) as the Record on which it is dependent. " +
+                "Here are the Records (and respective \(typeName)s) between which you've attempted to create a dependency:" +
+                "PROVIDING RECORD: \(providingRecord)\n" +
+                "PROVIDING \(typeName.uppercased()): \(providingRecord.databaseWhereStored)\n" +
+                "DEPENDENT RECORD: \(dependentRecord)\n" +
+                "DEPENDENT \(typeName.uppercased()): \(dependentRecord.databaseWhereStored)\n"
+            )
+            
+        }
+        
+        if dependentRecord.databaseWhereStored == nil {
+            dependentRecord.databaseWhereStored = providingRecord.databaseWhereStored
+        } else {
+            guard dependentRecord.databaseWhereStored == providingRecord.databaseWhereStored else { mismatchFatalError(with: "database") }
+        }
+        
+        if dependentRecord.recordZone == nil {
+            dependentRecord.recordZone = providingRecord.recordZone
+        } else {
+            guard dependentRecord.recordZone == providingRecord.recordZone else { mismatchFatalError(with: "record zone") }
+        }
+        
     }
     
     
