@@ -11,15 +11,6 @@ import CloudKit
 
 class CloudKitUser : Record {
     
-    init(backingRemoteRecord:CKRecord?=nil) {
-        
-        let zoneName = UUID().uuidString as RecordIdentifier
-        self.ownedRecordsZone = CKRecordZone(zoneName: zoneName)
-        
-        super.init(databaseWhereStored: .public, backingRemoteRecord:backingRemoteRecord)
-        
-    }
     
-    let ownedRecordsZone: CKRecordZone
     
 }
