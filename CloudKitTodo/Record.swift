@@ -21,22 +21,29 @@ internal struct RelatedRecordData {
 class Record: Hashable {
     
     
-    // MARK: - Initializers
+    // MARK: - Initializer
     
-    init(databaseWhereStored:CKDatabaseScope, recordZone:CKRecordZone) {
+    init(databaseWhereStored:CKDatabaseScope, backingRemoteRecord:CKRecord?=nil) {
         
         let typeString = String(describing: Record.type())
         guard typeString != "Record" else {
             fatalError("Record is an abstract class; it must not be directly instantiated.")
         }
         
-        self.databaseWhereStored = databaseWhereStored
-        self.recordZone = recordZone
-        
         self.identifier = UUID().uuidString as RecordIdentifier
         
-        let recordID = CKRecordID(recordName: self.identifier)
-        self.backingRemoteRecord = CKRecord(recordType: typeString, recordID: recordID)
+        self.databaseWhereStored = databaseWhereStored
+        
+        if let backingRemoteRecord = backingRemoteRecord {
+            
+            self.backingRemoteRecord = backingRemoteRecord
+            
+        } else {
+            
+            let recordID = CKRecordID(recordName: self.identifier)
+            self.backingRemoteRecord = CKRecord(recordType: typeString, recordID: recordID)
+            
+        }
         
         for key in self.backingRemoteRecord.allKeys() {
             
@@ -55,7 +62,6 @@ class Record: Hashable {
     // MARK: - Public Properties
     
     let databaseWhereStored: CKDatabaseScope
-    let recordZone: CKRecordZone
     
     var typeString: String {
         
@@ -192,9 +198,9 @@ class Record: Hashable {
     }
     
     
-    // MARK: - Private Functions
+    // MARK: - Internal Functions
     
-    private static func type() -> Record.Type {
+    internal static func type() -> Record.Type {
         return self
     }
     

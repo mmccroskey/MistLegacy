@@ -12,13 +12,13 @@ import CloudKit
 class NestedRecord: Record {
     
     
-    // MARK: - Initializers
+    // MARK: - Initializer
     
-    init(parent:Record) {
+    init(databaseWhereStored:CKDatabaseScope, backingRemoteRecord:CKRecord?=nil, parent:Record) {
         
         self.parent = parent
         
-        super.init(databaseWhereStored: parent.databaseWhereStored, recordZone: parent.recordZone)
+        super.init(databaseWhereStored: parent.databaseWhereStored, backingRemoteRecord: backingRemoteRecord)
         
         self.backingRemoteRecord.setParent(parent.backingRemoteRecord)
         
