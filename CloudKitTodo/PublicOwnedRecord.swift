@@ -9,4 +9,14 @@
 import Foundation
 import CloudKit
 
-class PublicOwnedRecord: OwnedRecord {}
+class PublicOwnedRecord: OwnedRecord {
+    
+    init(owner:CloudKitUser) {
+        super.init(databaseWhereStored: .public, owner: owner)
+    }
+    
+    internal init(backingRemoteRecord:CKRecord?=nil, owner:CloudKitUser) {
+        super.init(databaseWhereStored: .public, backingRemoteRecord: backingRemoteRecord, owner: owner)
+    }
+
+}

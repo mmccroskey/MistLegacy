@@ -12,24 +12,42 @@ import CloudKit
 class PrivateOwnedRecord: OwnedRecord {
     
     
-    // MARK: - Initializer
+    // MARK: - Initializers
     
-    override init(databaseWhereStored:CKDatabaseScope, backingRemoteRecord:CKRecord?=nil, owner:CloudKitUser) {
+    init(owner:CloudKitUser) {
+        
+        self.zone = PrivateOwnedRecord.zone(with: owner)
+        super.init(databaseWhereStored: .private, owner: owner)
+        
+    }
+    
+    internal override init(databaseWhereStored:CKDatabaseScope, backingRemoteRecord:CKRecord?=nil, owner:CloudKitUser) {
         
         guard databaseWhereStored != .public else {
             fatalError("Private Records must be stored in the private or shared databases, not the public database.")
         }
         
-        let zoneName = UUID().uuidString
-        let zoneID = CKRecordZoneID(zoneName: zoneName, ownerName: owner.identifier)
-        self.zone = CKRecordZone(zoneID: zoneID)
+        self.zone = PrivateOwnedRecord.zone(with: owner)
         
         super.init(databaseWhereStored: databaseWhereStored, backingRemoteRecord: backingRemoteRecord, owner: owner)
         
     }
     
+    
     // MARK: - Public Properties
     
     internal let zone: CKRecordZone
+    
+    
+    // MARK: - Private Static Functions
+    
+    private static func zone(with owner:CloudKitUser) -> CKRecordZone {
+        
+        let zoneName = UUID().uuidString
+        let zoneID = CKRecordZoneID(zoneName: zoneName, ownerName: owner.identifier)
+        
+        return CKRecordZone(zoneID: zoneID)
+        
+    }
     
 }

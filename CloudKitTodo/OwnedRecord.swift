@@ -14,7 +14,7 @@ class OwnedRecord: Record {
     
     // MARK: - Initializer
     
-    init(databaseWhereStored:CKDatabaseScope, backingRemoteRecord:CKRecord?=nil, owner:CloudKitUser) {
+    internal init(databaseWhereStored:CKDatabaseScope, backingRemoteRecord:CKRecord?=nil, owner:CloudKitUser) {
         
         let typeString = String(describing: Record.type())
         guard ((typeString != "Record") && (typeString != "OwnedRecord")) else {
