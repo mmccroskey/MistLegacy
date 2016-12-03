@@ -429,36 +429,136 @@ private class LocalDataCoordinator : DataCoordinator {
 
 
 private class RemoteDataCoordinator : DataCoordinator {
+    
+    
+    // MARK: - Private Variables and Metadata Accessors
+    
+    
+    // MARK: Container
+    
+    private let container = CKContainer.default()
+    
+    
+    // MARK: Databases
+    
+    private func database(forScope scope:CKDatabaseScope) -> CKDatabase {
         
-    }
-    
-    
-    // MARK: - Private Functions
-    
-    private func metadata(forKey key:String) -> Any? {
-        
-        if let selfMetadata = Mist.localMetadataStorage.value(forKey: "LocalDataCoordinator") as? [String : Any?] {
-            return selfMetadata[key]
+        switch scope {
+            
+        case .public:
+            return self.container.publicCloudDatabase
+            
+        case .private:
+            return self.container.privateCloudDatabase
+            
+        case .shared:
+            return self.container.sharedCloudDatabase
+            
         }
         
-        return nil
-        
     }
     
-    private func setMetadata(_ metadata:Any?, forKey key:String) {
+    
+    // MARK: Database Server Change Tokens
+    
+    private func databaseServerChangeToken(forScope scope:CKDatabaseScope, retrievalCompleted:((CKServerChangeToken?) -> Void)) {
         
-        if var selfMetadata = Mist.localMetadataStorage.value(forKey: "LocalDataCoordinator") as? [String : Any?] {
+        if let key = self.databaseServerChangeTokenKey(forScope: scope) {
             
-            selfMetadata[key] = metadata
-            Mist.localMetadataStorage.setValue(selfMetadata, forKey: "LocalDataCoordinator")
+            self.metadata(forKey: key, retrievalCompleted: { (value) in
+                
+                if let existingChangeToken = value as? CKServerChangeToken {
+                    retrievalCompleted(existingChangeToken)
+                } else {
+                    retrievalCompleted(nil)
+                }
+                
+            })
             
         }
         
     }
     
+    private func setDatabaseServerChangeToken(_ changeToken:CKServerChangeToken?, forScope scope:CKDatabaseScope) {
+        
+        if let key = self.databaseServerChangeTokenKey(forScope: scope) {
+            self.setMetadata(changeToken, forKey: key)
+        }
+        
+    }
+    
+    private func databaseServerChangeTokenKey(forScope scope:CKDatabaseScope) -> String? {
+        
+        let key: String?
+        
+        switch scope {
+            
+        case .private:
+            key = "privateDatabaseServerChangeToken"
+            
+        case .shared:
+            key = "sharedDatabaseServerChangeToken"
+            
+        default:
+            key = nil
+            
+        }
+        
+        return key
+        
+    }
     
     
-    // MARK: - Updating Local Content with Changes from Remote
+    // MARK: Record Zone Server Change Tokens
+    
+    private typealias RecordZoneIdentifier = String
+    
+    private func recordZonesServerChangeTokens(forScope scope:CKDatabaseScope, retrievalCompleted:(([RecordZoneIdentifier : CKServerChangeToken?]) -> Void)) {
+        
+        if let key = self.recordZonesServerChangeTokensKey(forScope: scope) {
+            
+            self.metadata(forKey: key, retrievalCompleted: { (value) in
+                
+                if let existingChangeTokens = value as? [RecordZoneIdentifier : CKServerChangeToken?] {
+                    retrievalCompleted(existingChangeTokens)
+                } else {
+                    retrievalCompleted([:])
+                }
+                
+            })
+            
+        }
+        
+    }
+    
+    private func setRecordZonesServerChangeTokens(_ changeTokens:[RecordZoneIdentifier : CKServerChangeToken?], forScope scope:CKDatabaseScope) {
+        
+        if let key = self.recordZonesServerChangeTokensKey(forScope: scope) {
+            self.setMetadata(changeTokens, forKey: key)
+        }
+        
+    }
+    
+    private func recordZonesServerChangeTokensKey(forScope scope:CKDatabaseScope) -> String? {
+        
+        let key: String?
+        
+        switch scope {
+            
+        case .private:
+            key = "privateRecordZonesServerChangeToken"
+            
+        case .shared:
+            key = "sharedRecordZonesServerChangeToken"
+            
+        default:
+            key = nil
+            
+        }
+        
+        return key
+        
+    }
     
     func performCloudRefreshOfPublicData(inZone zone:CKRecordZone, completion:RefreshCompletion) {}
     
@@ -564,12 +664,11 @@ private class RemoteDataCoordinator : DataCoordinator {
             
         }
         
-        let container = CKContainer.default()
         let databases: [CKDatabaseScope : CKDatabase] = [
             
-            .public : container.publicCloudDatabase,
-            .shared : container.sharedCloudDatabase,
-            .private : container.privateCloudDatabase
+            .public : self.container.publicCloudDatabase,
+            .shared : self.container.sharedCloudDatabase,
+            .private : self.container.privateCloudDatabase
             
         ]
         
