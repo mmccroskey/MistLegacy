@@ -70,7 +70,6 @@ class Mist {
         
         var error: Error?
         
-        var isInternetAvailable: Bool = false
         var isICloudAvailable: Bool = false
         var isUserAuthenticated: Bool = false
         var isUserRecordCreated: Bool = false
@@ -79,8 +78,7 @@ class Mist {
         
         let operations: [BlockOperation] = [
             
-            BlockOperation { self.remoteDataCoordinator.confirmInternetAvailable(&isInternetAvailable) },
-            BlockOperation { self.remoteDataCoordinator.confirmICloudAvailable(isInternetAvailable, isICloudAvailable: &isICloudAvailable) },
+            BlockOperation { self.remoteDataCoordinator.confirmICloudAvailable(isICloudAvailable: &isICloudAvailable) },
             BlockOperation { self.remoteDataCoordinator.confirmUserAuthenticated(isICloudAvailable, isUserAuthenticated: &isUserAuthenticated) },
             BlockOperation { self.remoteDataCoordinator.confirmUserRecordCreated(isUserAuthenticated, isUserRecordCreated: &isUserRecordCreated) },
             BlockOperation { self.remoteDataCoordinator.pullRemoteChanges(isUserRecordCreated, remoteChangesPulled: &remoteChangesPulled, error: &error) },
@@ -100,7 +98,7 @@ class Mist {
         
         syncOperationQueue.addOperation {
             
-            let succeeded = (isInternetAvailable && isICloudAvailable && isUserAuthenticated && isUserRecordCreated && remoteChangesPulled && localChangesPushed)
+            let succeeded = (isICloudAvailable && isUserAuthenticated && isUserRecordCreated && remoteChangesPulled && localChangesPushed)
             finished(succeeded, error)
             
         }
@@ -604,17 +602,7 @@ private class RemoteDataCoordinator : DataCoordinator {
     
     // MARK: - Preflighting
     
-    func confirmInternetAvailable(_  isInternetAvailable: inout Bool) {
-        
-        isInternetAvailable = true
-        
-    }
-    
-    func confirmICloudAvailable(_ isInternetAvailable:Bool, isICloudAvailable: inout Bool) {
-    
-        guard isInternetAvailable else {
-            return
-        }
+    func confirmICloudAvailable(isICloudAvailable: inout Bool) {
         
         // Work goes here
         
