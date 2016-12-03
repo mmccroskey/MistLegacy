@@ -307,7 +307,7 @@ private class LocalDataCoordinator {
     
     private func performChange(ofType changeType:RecordChangeType, on records:Set<Record>, within scope:StorageScope) {
         
-        let execution = {
+        Mist.localRecordsQueue.addOperation {
             
             for record in records {
                 
@@ -356,7 +356,6 @@ private class LocalDataCoordinator {
             
         }
         
-        Mist.localRecordsQueue.addOperation(withExecutionBlock: execution)
         
     }
     
