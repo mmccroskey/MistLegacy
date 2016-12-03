@@ -78,9 +78,9 @@ class Mist {
         
         let operations: [BlockOperation] = [
             
-            BlockOperation { self.remoteDataCoordinator.confirmICloudAvailable(isICloudAvailable: &isICloudAvailable) },
-            BlockOperation { self.remoteDataCoordinator.confirmUserAuthenticated(isICloudAvailable, isUserAuthenticated: &isUserAuthenticated) },
-            BlockOperation { self.remoteDataCoordinator.confirmUserRecordCreated(isUserAuthenticated, isUserRecordCreated: &isUserRecordCreated) },
+            BlockOperation { self.remoteDataCoordinator.confirmICloudAvailable(isICloudAvailable: &isICloudAvailable, error: &error) },
+            BlockOperation { self.remoteDataCoordinator.confirmUserAuthenticated(isICloudAvailable, isUserAuthenticated: &isUserAuthenticated, error: &error) },
+            BlockOperation { self.remoteDataCoordinator.confirmUserRecordCreated(isUserAuthenticated, isUserRecordCreated: &isUserRecordCreated, error: &error) },
             BlockOperation { self.remoteDataCoordinator.pullRemoteChanges(isUserRecordCreated, remoteChangesPulled: &remoteChangesPulled, error: &error) },
             BlockOperation { self.remoteDataCoordinator.pushLocalChanges(remoteChangesPulled, localChangesPushed: &localChangesPushed, error: &error) }
         
@@ -602,7 +602,7 @@ private class RemoteDataCoordinator : DataCoordinator {
     
     // MARK: - Preflighting
     
-    func confirmICloudAvailable(isICloudAvailable: inout Bool) {
+    func confirmICloudAvailable(isICloudAvailable: inout Bool, error: inout Error?) {
         
         // Work goes here
         
@@ -610,7 +610,7 @@ private class RemoteDataCoordinator : DataCoordinator {
         
     }
     
-    func confirmUserAuthenticated(_ isICloudAvailable:Bool, isUserAuthenticated: inout Bool) {
+    func confirmUserAuthenticated(_ isICloudAvailable:Bool, isUserAuthenticated: inout Bool, error: inout Error?) {
         
         guard isICloudAvailable else {
             return
@@ -622,7 +622,7 @@ private class RemoteDataCoordinator : DataCoordinator {
     
     }
     
-    func confirmUserRecordCreated(_ isUserAuthenticated:Bool, isUserRecordCreated: inout Bool) {
+    func confirmUserRecordCreated(_ isUserAuthenticated:Bool, isUserRecordCreated: inout Bool, error: inout Error?) {
     
         guard isUserAuthenticated else {
             return
