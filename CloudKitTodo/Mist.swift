@@ -114,6 +114,10 @@ internal class Queue {
     
     // MARK: - Public Functions
     
+    func addOperation(_ block:(() -> Void)) {
+        self.addOperation(withExecutionBlock: block)
+    }
+    
     func addOperation(withExecutionBlock block:(() -> Void), completionBlock:(() -> Void)?=nil) {
         
         let operation = BlockOperation { block() }
