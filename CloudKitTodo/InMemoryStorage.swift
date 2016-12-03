@@ -13,7 +13,12 @@ class InMemoryStorage: LocalRecordStorage, LocalMetadataStorage, LocalCachedReco
     
     // MARK: - Private Properties
     
-    private var records: [RecordIdentifier : Record] = [:]
+    private var storedRecords: [StorageScope : [RecordIdentifier : Record]] = [
+        .public  : [:],
+        .private : [:],
+        .shared  : [:]
+    ]
+    
     private var metadata: [String:Any?] = [:]
     
     
@@ -30,35 +35,35 @@ class InMemoryStorage: LocalRecordStorage, LocalMetadataStorage, LocalCachedReco
     
     // MARK: Adding & Modifying Records
     
-    func addRecord(_ record:Record) {
-        self.records[record.identifier] = record
+    func addRecord(_ record:Record, toStorageWith scope:StorageScope) {
+        self.storedRecords[scope]![record.identifier] = record
     }
     
     
     
     // MARK: Removing Records
     
-    func removeRecord(_ record:Record) {
-        return self.removeRecord(matching: record.identifier)
+    func removeRecord(_ record:Record, fromStorageWith scope:StorageScope) {
+        return self.removeRecord(matching: record.identifier, fromStorageWith: scope)
     }
     
-    func removeRecord(matching identifier:RecordIdentifier) {
-        self.records.removeValue(forKey: identifier)
+    func removeRecord(matching identifier:RecordIdentifier, fromStorageWith scope:StorageScope) {
+        self.storedRecords[scope]!.removeValue(forKey: identifier)
     }
     
     
     // MARK: Finding Records
     
-    func record(matching identifier:RecordIdentifier) -> Record? {
-        return self.records[identifier]
+    func record(matching identifier:RecordIdentifier, inStorageWith scope:StorageScope) -> Record? {
+        return self.storedRecords[scope]![identifier]
     }
     
-    func records(matching filter:((Record) throws -> Bool)) rethrows -> [Record] {
-        return try self.records.values.filter(filter)
+    func records(matching filter:((Record) throws -> Bool), inStorageWith scope:StorageScope) rethrows -> [Record] {
+        return try self.storedRecords[scope]!.values.filter(filter)
     }
     
-    func records(matching predicate:NSPredicate) -> [Record] {
-        return self.records(matching: {  predicate.evaluate(with: $0) })
+    func records(matching predicate:NSPredicate, inStorageWith scope:StorageScope) -> [Record] {
+        return self.records(matching: { predicate.evaluate(with: $0) }, inStorageWith: scope)
     }
     
     

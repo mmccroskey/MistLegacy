@@ -13,19 +13,19 @@ protocol LocalRecordStorage {
     
     // MARK: - Adding & Modifying Records
     
-    func addRecord(_ record:Record)
+    func addRecord(_ record:Record, toStorageWith scope:StorageScope)
     
     
     // MARK: - Removing Records
     
-    func removeRecord(_ record:Record)
-    func removeRecord(matching identifier:RecordIdentifier)
+    func removeRecord(_ record:Record, fromStorageWith scope:StorageScope)
+    func removeRecord(matching identifier:RecordIdentifier, fromStorageWith scope:StorageScope)
     
     
     // MARK: - Finding Records
     
-    func record(matching identifier:RecordIdentifier) -> Record?
-    func records(matching filter:((Record) throws -> Bool)) rethrows -> [Record]
-    func records(matching predicate:NSPredicate) -> [Record]
+    func record(matching identifier:RecordIdentifier, inStorageWith scope:StorageScope) -> Record?
+    func records(matching filter:((Record) throws -> Bool), inStorageWith scope:StorageScope) rethrows -> [Record]
+    func records(matching predicate:NSPredicate, inStorageWith scope:StorageScope) -> [Record]
     
 }

@@ -11,7 +11,9 @@ import CloudKit
 
 
 
-typealias RefreshCompletion = (([CKDatabaseScope:Bool], Bool, Error?) -> Void)
+typealias StorageScope = CKDatabaseScope
+
+typealias RefreshCompletion = (([StorageScope:Bool], Bool, Error?) -> Void)
 
 
 
@@ -24,35 +26,35 @@ class Mist {
     
     // MARK: - Fetching Items
     
-    static func get(_ identifier:RecordIdentifier, fetchDepth:Int = -1, finished:((Record?) -> Void)) {
-        self.localDataCoordinator.retrieveRecord(matching: identifier, fetchDepth:fetchDepth, retrievalCompleted: finished)
+    static func get(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int = -1, finished:((Record?) -> Void)) {
+        self.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWith: from, fetchDepth: fetchDepth, retrievalCompleted: finished)
     }
     
-    static func find(where filter:((Record) throws -> Bool), fetchDepth:Int = -1, finished:(([Record], Error?) -> Void)) {
-        self.localDataCoordinator.retrieveRecords(matching: filter, fetchDepth:fetchDepth, retrievalCompleted: finished)
+    static func find(where filter:((Record) throws -> Bool), within:StorageScope, fetchDepth:Int = -1, finished:(([Record], Error?) -> Void)) {
+        self.localDataCoordinator.retrieveRecords(matching: filter, inStorageWith: within, fetchDepth: fetchDepth, retrievalCompleted: finished)
     }
     
-    static func find(where predicate:NSPredicate, fetchDepth:Int = -1, finished:(([Record]) -> Void)) {
-        self.localDataCoordinator.retrieveRecords(matching: predicate, fetchDepth:fetchDepth, retrievalCompleted: finished)
+    static func find(where predicate:NSPredicate, within:StorageScope, fetchDepth:Int = -1, finished:(([Record]) -> Void)) {
+        self.localDataCoordinator.retrieveRecords(matching: predicate, inStorageWith: within, fetchDepth:fetchDepth, retrievalCompleted: finished)
     }
     
     
     // MARK: - Modifying Items
     
-    static func add(_ record:Record) {
-        self.localDataCoordinator.addRecord(record)
+    static func add(_ record:Record, to:StorageScope) {
+        self.localDataCoordinator.addRecord(record, toStorageWith: to)
     }
     
-    static func add(_ records:Set<Record>) {
-        self.localDataCoordinator.addRecords(records)
+    static func add(_ records:Set<Record>, to:StorageScope) {
+        self.localDataCoordinator.addRecords(records, toStorageWith: to)
     }
     
-    static func delete(_ record:Record) {
-        self.localDataCoordinator.removeRecord(record)
+    static func delete(_ record:Record, from:StorageScope) {
+        self.localDataCoordinator.removeRecord(record, fromStorageWith: from)
     }
     
-    static func delete(_ records:Set<Record>) {
-        self.localDataCoordinator.removeRecords(records)
+    static func delete(_ records:Set<Record>, from:StorageScope) {
+        self.localDataCoordinator.removeRecords(records, fromStorageWith: from)
     }
     
     
@@ -146,7 +148,7 @@ private class LocalDataCoordinator {
     }
     
     
-    func associateRelatedRecords(for record:Record?, using fetchDepth:Int) {
+    func associateRelatedRecords(for record:Record?, in scope:StorageScope, using fetchDepth:Int) {
         
         if let record = record, fetchDepth != 0 {
             
@@ -163,7 +165,7 @@ private class LocalDataCoordinator {
                     newFetchDepth = fetchDepth
                 }
                 
-                self.retrieveRecord(matching: identifier, fetchDepth:newFetchDepth, retrievalCompleted: { (fetchedRecord) in
+                self.retrieveRecord(matching: identifier, fromStorageWith: scope, fetchDepth: newFetchDepth, retrievalCompleted: { (fetchedRecord) in
                     
                     if let relatedRecord = fetchedRecord {
                         record.setRelatedRecord(relatedRecord, forKey: propertyName, withReferenceAction: action)
@@ -180,7 +182,7 @@ private class LocalDataCoordinator {
     
     // MARK: - Fetching Locally-Cached Items
     
-    func retrieveRecord(matching identifier:RecordIdentifier, fetchDepth:Int, retrievalCompleted:((Record?) -> Void)) {
+    func retrieveRecord(matching identifier:RecordIdentifier, fromStorageWith scope:StorageScope, fetchDepth:Int, retrievalCompleted:((Record?) -> Void)) {
         
         var record: Record? = nil
         
@@ -192,12 +194,12 @@ private class LocalDataCoordinator {
                 
             } else {
                 
-                record = Mist.localRecordStorage.record(matching: identifier)
+                record = Mist.localRecordStorage.record(matching: identifier, inStorageWith: scope)
                 self.retrievedRecordsCache[identifier] = record
                 
             }
             
-            self.associateRelatedRecords(for: record, using: fetchDepth)
+            self.associateRelatedRecords(for: record, in: scope, using: fetchDepth)
             
         }
         
@@ -207,7 +209,7 @@ private class LocalDataCoordinator {
         
     }
     
-    func retrieveRecords(matching filter:((Record) throws -> Bool), fetchDepth:Int, retrievalCompleted:(([Record], Error?) -> Void)) {
+    func retrieveRecords(matching filter:((Record) throws -> Bool), inStorageWith scope:StorageScope, fetchDepth:Int, retrievalCompleted:(([Record], Error?) -> Void)) {
         
         var records: [Record] = []
         var error: Error?
@@ -223,7 +225,7 @@ private class LocalDataCoordinator {
                     
                 } else {
                     
-                    try records = Mist.localRecordStorage.records(matching: filter)
+                    try records = Mist.localRecordStorage.records(matching: filter, inStorageWith: scope)
                     
                     for record in records {
                         self.retrievedRecordsCache[record.identifier] = record
@@ -232,7 +234,7 @@ private class LocalDataCoordinator {
                 }
                 
                 for record in records {
-                    self.associateRelatedRecords(for: record, using: fetchDepth)
+                    self.associateRelatedRecords(for: record, in: scope, using: fetchDepth)
                 }
                 
             } catch let fetchError {
@@ -249,7 +251,7 @@ private class LocalDataCoordinator {
         
     }
     
-    func retrieveRecords(matching predicate:NSPredicate, fetchDepth:Int, retrievalCompleted:(([Record]) -> Void)) {
+    func retrieveRecords(matching predicate:NSPredicate, inStorageWith scope:StorageScope, fetchDepth:Int, retrievalCompleted:(([Record]) -> Void)) {
         
         var records: [Record] = []
         
@@ -262,7 +264,7 @@ private class LocalDataCoordinator {
                 
             } else {
                 
-                records = Mist.localRecordStorage.records(matching: predicate)
+                records = Mist.localRecordStorage.records(matching: predicate, inStorageWith: scope)
                 
                 for record in records {
                     self.retrievedRecordsCache[record.identifier] = record
@@ -271,7 +273,7 @@ private class LocalDataCoordinator {
             }
             
             for record in records {
-                self.associateRelatedRecords(for: record, using: fetchDepth)
+                self.associateRelatedRecords(for: record, in: scope, using: fetchDepth)
             }
             
         }
@@ -285,23 +287,23 @@ private class LocalDataCoordinator {
     
     // MARK: - Making Local Changes
     
-    func addRecord(_ record:Record) {
-        self.addRecords(Set([record]))
+    func addRecord(_ record:Record, toStorageWith scope:StorageScope) {
+        self.addRecords(Set([record]), toStorageWith: scope)
     }
     
-    func addRecords(_ records:Set<Record>) {
-        self.performChange(ofType: .addition, on: records)
+    func addRecords(_ records:Set<Record>, toStorageWith scope:StorageScope) {
+        self.performChange(ofType: .addition, on: records, within: scope)
     }
     
-    func removeRecord(_ record:Record) {
-        self.removeRecords(Set([record]))
+    func removeRecord(_ record:Record, fromStorageWith scope:StorageScope) {
+        self.removeRecords(Set([record]), fromStorageWith: scope)
     }
     
-    func removeRecords(_ records:Set<Record>) {
-        self.performChange(ofType: .removal, on: records)
+    func removeRecords(_ records:Set<Record>, fromStorageWith scope:StorageScope) {
+        self.performChange(ofType: .removal, on: records, within: scope)
     }
     
-    private func performChange(ofType changeType:RecordChangeType, on records:Set<Record>) {
+    private func performChange(ofType changeType:RecordChangeType, on records:Set<Record>, within:StorageScope) {
         
         let execution = {
             
@@ -311,12 +313,12 @@ private class LocalDataCoordinator {
                     
                 case .addition:
                     self.retrievedRecordsCache[record.identifier] = record
-                    Mist.localRecordStorage.addRecord(record)
+                    Mist.localRecordStorage.addRecord(record, toStorageWith: within)
                     Mist.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.insert(record)
                     
                 case .removal:
                     self.retrievedRecordsCache.removeValue(forKey: record.identifier)
-                    Mist.localRecordStorage.removeRecord(record)
+                    Mist.localRecordStorage.removeRecord(record, fromStorageWith: within)
                     Mist.localCachedRecordChangesStorage.deletedRecordsAwaitingPushToCloud.insert(record)
                     Mist.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.remove(record)
                     
