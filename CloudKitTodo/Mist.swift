@@ -74,57 +74,56 @@ class Mist {
     static var localCachedRecordChangesStorage: LocalCachedRecordChangesStorage = InMemoryStorage()
     
     
-    // MARK: - Protected Functions
+    // MARK: - Internal Properties
     
-    fileprivate static func addOperation(withExecutionBlock block:(() -> Void), completionBlock:(() -> Void)?=nil) {
+    internal static let localRecordsQueue = Queue()
+    internal static let localMetadataQueue = Queue()
+    internal static let localCachedRecordChangesQueue = Queue()
+    
+    
+    // MARK: - Private Properties
+    
+    private static let localDataCoordinator = LocalDataCoordinator()
+    private static let remoteDataCoordinator = RemoteDataCoordinator()
+    
+}
+
+
+
+// MARK: - 
+
+
+
+internal class Queue {
+    
+    
+    // MARK: - Initializer
+    
+    init() {
+        
+        self.operationQueue.maxConcurrentOperationCount = 1
+        self.operationQueue.qualityOfService = .userInteractive
+        
+    }
+    
+    
+    // MARK: - Private Properties
+    
+    private let operationQueue = OperationQueue()
+    
+    
+    // MARK: - Public Functions
+    
+    func addOperation(withExecutionBlock block:(() -> Void), completionBlock:(() -> Void)?=nil) {
         
         let operation = BlockOperation { block() }
         operation.completionBlock = completionBlock
         
-        if let latestOperation = self.queue.lastOperation() {
+        if let latestOperation = self.operationQueue.operations.last {
             operation.addDependency(latestOperation)
         }
-
-        self.queue.addOperation(operation)
-    
-    }
-
-    // MARK: - Private Properties
-    
-    private static let queue = Queue()
-    private static let localDataCoordinator = LocalDataCoordinator()
-    private static let remoteDataCoordinator = RemoteDataCoordinator()
-    
-    
-    // MARK: - Private Classes
-    
-    private class Queue {
         
-        
-        // MARK: - Initializer
-        
-        init() {
-            
-            self.operationQueue.maxConcurrentOperationCount = 1
-            self.operationQueue.qualityOfService = .userInteractive
-            
-        }
-        
-        
-        // MARK: - Private Properties
-        
-        private let operationQueue = OperationQueue()
-        
-        
-        // MARK: - Public Functions
-        
-        func addOperation(_ operation:Operation) {
-            self.operationQueue.addOperation(operation)
-        }
-        
-        func lastOperation() -> Operation? {
-            return self.operationQueue.operations.last
-        }
+        self.operationQueue.addOperation(operation)
         
     }
     
@@ -173,7 +172,7 @@ private class LocalDataCoordinator {
         
         let completion = { retrievalCompleted(record) }
         
-        Mist.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        Mist.localRecordsQueue.addOperation(withExecutionBlock: execution, completionBlock: completion)
         
     }
     
@@ -215,7 +214,7 @@ private class LocalDataCoordinator {
         
         let completion = { retrievalCompleted(records, error) }
         
-        Mist.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        Mist.localRecordsQueue.addOperation(withExecutionBlock: execution, completionBlock: completion)
         
     }
     
@@ -248,7 +247,7 @@ private class LocalDataCoordinator {
         
         let completion = { retrievalCompleted(records) }
         
-        Mist.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        Mist.localRecordsQueue.addOperation(withExecutionBlock: execution, completionBlock: completion)
         
     }
     
@@ -353,7 +352,7 @@ private class LocalDataCoordinator {
             
         }
         
-        Mist.addOperation(withExecutionBlock: execution)
+        Mist.localRecordsQueue.addOperation(withExecutionBlock: execution)
         
     }
     
