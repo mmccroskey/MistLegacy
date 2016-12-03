@@ -560,11 +560,14 @@ private class RemoteDataCoordinator : DataCoordinator {
         
     }
     
-    func performCloudRefreshOfPublicData(inZone zone:CKRecordZone, completion:RefreshCompletion) {}
     
-    func performCloudRefreshOfAllPrivateData(_ completion:RefreshCompletion) {}
+    // MARK: - Updating Local Content with Changes from Remote
     
-    func performCloudRefreshOfPrivateObjectSubtree(originatingWith rootObject:Record, completion:RefreshCompletion) {}
+    func pullRemoteChanges(_ completion:RefreshCompletion) {
+        
+        
+        
+    }
     
     
     // MARK: - Updating Remote Content with Changes from Local
