@@ -49,11 +49,11 @@ class Mist {
         self.localDataCoordinator.addRecords(records, toStorageWith: to)
     }
     
-    static func delete(_ record:Record, from:StorageScope) {
+    static func remove(_ record:Record, from:StorageScope) {
         self.localDataCoordinator.removeRecord(record, fromStorageWith: from)
     }
     
-    static func delete(_ records:Set<Record>, from:StorageScope) {
+    static func remove(_ records:Set<Record>, from:StorageScope) {
         self.localDataCoordinator.removeRecords(records, fromStorageWith: from)
     }
     
