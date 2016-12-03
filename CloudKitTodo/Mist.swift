@@ -357,6 +357,30 @@ private class LocalDataCoordinator {
         
     }
     
+    
+    // MARK: - Private Functions
+    
+    private func metadata(forKey key:String) -> Any? {
+        
+        if let selfMetadata = Mist.localMetadataStorage.value(forKey: "LocalDataCoordinator") as? [String : Any?] {
+            return selfMetadata[key]
+        }
+        
+        return nil
+        
+    }
+    
+    private func setMetadata(_ metadata:Any?, forKey key:String) {
+        
+        if var selfMetadata = Mist.localMetadataStorage.value(forKey: "LocalDataCoordinator") as? [String : Any?] {
+            
+            selfMetadata[key] = metadata
+            Mist.localMetadataStorage.setValue(selfMetadata, forKey: "LocalDataCoordinator")
+            
+        }
+        
+    }
+    
 }
 
 
@@ -498,6 +522,30 @@ private class RemoteDataCoordinator {
             
         }
         
+        
+    }
+    
+    
+    // MARK: Private Functions
+    
+    private func metadata(forKey key:String) -> Any? {
+        
+        if let selfMetadata = Mist.localMetadataStorage.value(forKey: "RemoteDataCoordinator") as? [String : Any?] {
+            return selfMetadata[key]
+        }
+        
+        return nil
+        
+    }
+    
+    private func setMetadata(_ metadata:Any?, forKey key:String) {
+        
+        if var selfMetadata = Mist.localMetadataStorage.value(forKey: "RemoteDataCoordinator") as? [String : Any?] {
+            
+            selfMetadata[key] = metadata
+            Mist.localMetadataStorage.setValue(selfMetadata, forKey: "RemoteDataCoordinator")
+            
+        }
         
     }
     
