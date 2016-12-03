@@ -168,7 +168,7 @@ private class LocalDataCoordinator {
                 self.retrieveRecord(matching: identifier, fromStorageWith: scope, fetchDepth: newFetchDepth, retrievalCompleted: { (fetchedRecord) in
                     
                     if let relatedRecord = fetchedRecord {
-                        record.setRelatedRecord(relatedRecord, forKey: propertyName, withReferenceAction: action)
+                        record.setRelatedRecord(relatedRecord, forKey: propertyName, withRelationshipDeleteBehavior: action)
                     }
                     
                 })
@@ -303,7 +303,7 @@ private class LocalDataCoordinator {
         self.performChange(ofType: .removal, on: records, within: scope)
     }
     
-    private func performChange(ofType changeType:RecordChangeType, on records:Set<Record>, within:StorageScope) {
+    private func performChange(ofType changeType:RecordChangeType, on records:Set<Record>, within scope:StorageScope) {
         
         let execution = {
             
@@ -312,13 +312,39 @@ private class LocalDataCoordinator {
                 switch changeType {
                     
                 case .addition:
+                    
+                    guard ((record.scope == nil) || (record.scope == scope)) else {
+                        fatalError("The Record cannot be saved to storage with scope \(scope) -- it's already saved in storage with scope \(record.scope).")
+                    }
+                    
+                    record.scope = scope
+                    
+                    let relatedRecords = Set(record.relatedRecordsCache.values)
+                    let children = record.children
+                    let associatedRecords = relatedRecords.union(children)
+                    for associatedRecord in associatedRecords {
+                        
+                        Record.ensureDatabasesAndRecordZonesMatch(between: record, and: associatedRecord)
+                        
+                        let identifier = associatedRecord.identifier
+                        self.retrieveRecord(matching: identifier, fromStorageWith: scope, fetchDepth: -1, retrievalCompleted: { (record) in
+                            
+                            if record == nil {
+                                self.addRecord(associatedRecord, toStorageWith: scope)
+                            }
+                            
+                        })
+                        
+                    }
+                    
                     self.retrievedRecordsCache[record.identifier] = record
-                    Mist.localRecordStorage.addRecord(record, toStorageWith: within)
+                    Mist.localRecordStorage.addRecord(record, toStorageWith: scope)
                     Mist.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.insert(record)
                     
                 case .removal:
+                    
                     self.retrievedRecordsCache.removeValue(forKey: record.identifier)
-                    Mist.localRecordStorage.removeRecord(record, fromStorageWith: within)
+                    Mist.localRecordStorage.removeRecord(record, fromStorageWith: scope)
                     Mist.localCachedRecordChangesStorage.deletedRecordsAwaitingPushToCloud.insert(record)
                     Mist.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud.remove(record)
                     
