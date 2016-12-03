@@ -148,38 +148,6 @@ private class LocalDataCoordinator {
     }
     
     
-    func associateRelatedRecords(for record:Record?, in scope:StorageScope, using fetchDepth:Int) {
-        
-        if let record = record, fetchDepth != 0 {
-            
-            for relatedRecordDataSetKeyPair in record.relatedRecordDataSetKeyPairs {
-                
-                let propertyName = relatedRecordDataSetKeyPair.key
-                let identifier = relatedRecordDataSetKeyPair.value.identifier
-                let action = relatedRecordDataSetKeyPair.value.action
-                
-                let newFetchDepth: Int
-                if fetchDepth > 0 {
-                    newFetchDepth = (fetchDepth - 1)
-                } else {
-                    newFetchDepth = fetchDepth
-                }
-                
-                self.retrieveRecord(matching: identifier, fromStorageWith: scope, fetchDepth: newFetchDepth, retrievalCompleted: { (fetchedRecord) in
-                    
-                    if let relatedRecord = fetchedRecord {
-                        record.setRelatedRecord(relatedRecord, forKey: propertyName, withRelationshipDeleteBehavior: action)
-                    }
-                    
-                })
-                
-            }
-            
-        }
-        
-    }
-    
-    
     // MARK: - Fetching Locally-Cached Items
     
     func retrieveRecord(matching identifier:RecordIdentifier, fromStorageWith scope:StorageScope, fetchDepth:Int, retrievalCompleted:((Record?) -> Void)) {
@@ -281,6 +249,37 @@ private class LocalDataCoordinator {
         let completion = { retrievalCompleted(records) }
         
         Mist.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        
+    }
+    
+    private func associateRelatedRecords(for record:Record?, in scope:StorageScope, using fetchDepth:Int) {
+        
+        if let record = record, fetchDepth != 0 {
+            
+            for relatedRecordDataSetKeyPair in record.relatedRecordDataSetKeyPairs {
+                
+                let propertyName = relatedRecordDataSetKeyPair.key
+                let identifier = relatedRecordDataSetKeyPair.value.identifier
+                let action = relatedRecordDataSetKeyPair.value.action
+                
+                let newFetchDepth: Int
+                if fetchDepth > 0 {
+                    newFetchDepth = (fetchDepth - 1)
+                } else {
+                    newFetchDepth = fetchDepth
+                }
+                
+                self.retrieveRecord(matching: identifier, fromStorageWith: scope, fetchDepth: newFetchDepth, retrievalCompleted: { (fetchedRecord) in
+                    
+                    if let relatedRecord = fetchedRecord {
+                        record.setRelatedRecord(relatedRecord, forKey: propertyName, withRelationshipDeleteBehavior: action)
+                    }
+                    
+                })
+                
+            }
+            
+        }
         
     }
     
