@@ -12,7 +12,6 @@ import CloudKit
 
 
 typealias StorageScope = CKDatabaseScope
-
 typealias SyncCompletion = ((Bool, Error?) -> Void)
 
 
