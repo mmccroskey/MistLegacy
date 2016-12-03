@@ -72,18 +72,15 @@ class InMemoryStorage: LocalRecordStorage, LocalMetadataStorage, LocalCachedReco
     
     // MARK: - Getting Values
     
-    func value(for key:String) -> Any? {
+    func value(forKey key:String) -> Any? {
         return self.metadata[key]
     }
     
     
     // MARK: - Setting Values
     
-    func setValue(_ value:Any?, for key:String) -> Bool {
-        
+    func setValue(_ value:Any?, forKey key:String) {
         self.metadata[key] = value
-        return true
-        
     }
     
 }

@@ -13,11 +13,11 @@ protocol LocalMetadataStorage {
     
     // MARK: - Getting Values
     
-    func value(for key:String) -> Any?
+    func value(forKey key:String) -> Any?
     
     
     // MARK: - Setting Values
     
-    func setValue(_ value:Any?, for key:String) -> Bool
+    func setValue(_ value:Any?, forKey key:String)
     
 }
