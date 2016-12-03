@@ -10,6 +10,7 @@ import Foundation
 import CloudKit
 
 typealias RecordIdentifier = String
+typealias RelationshipDeleteBehavior = CKReferenceAction
 
 internal struct RelatedRecordData {
     
@@ -61,29 +62,24 @@ class Record: Hashable {
     
     // MARK: - Public Properties
     
+    let identifier: RecordIdentifier
+    
     var parent: Record? {
         
         willSet {
             
             if let parent = newValue {
+                
                 Record.ensureDatabasesAndRecordZonesMatch(between: parent, and: self)
+                parent.children.insert(self)
+                
             }
             
         }
         
     }
     
-    var typeString: String {
-        
-        let mirror = Mirror(reflecting: self)
-        let selfType = mirror.subjectType as! Record.Type
-        let selfTypeString = String(describing: selfType)
-        
-        return selfTypeString
-        
-    }
-    
-    let identifier: RecordIdentifier
+    private(set) var children: Set<Record> = []
     
     
     // MARK: - Protected Properties
@@ -95,6 +91,19 @@ class Record: Hashable {
     
     internal var relatedRecordsCache: [String : Record] = [:]
     internal var relatedRecordDataSetKeyPairs: [String : RelatedRecordData] = [:]
+    
+    
+    // MARK: - Private Properties
+    
+    private var typeString: String {
+        
+        let mirror = Mirror(reflecting: self)
+        let selfType = mirror.subjectType as! Record.Type
+        let selfTypeString = String(describing: selfType)
+        
+        return selfTypeString
+        
+    }
     
     
     // MARK: - Interacting with Record Properties
@@ -146,13 +155,13 @@ class Record: Hashable {
         return self.relatedRecordsCache[key]
     }
     
-    func setRelatedRecord(_ relatedRecord:Record?, forKey key:String, withReferenceAction action:CKReferenceAction) {
+    func setRelatedRecord(_ relatedRecord:Record?, forKey key:String, withRelationshipDeleteBehavior behavior:RelationshipDeleteBehavior) {
         
         func configureReference() {
             
             if let relatedRecord = relatedRecord {
                 
-                let newReference = CKReference(record: relatedRecord.backingRemoteRecord, action: action)
+                let newReference = CKReference(record: relatedRecord.backingRemoteRecord, action: behavior)
                 self.backingRemoteRecord.setObject(newReference, forKey: key)
                 
             } else {
