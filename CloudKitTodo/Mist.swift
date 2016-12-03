@@ -370,10 +370,10 @@ private class RemoteDataCoordinator {
             
             let scope = scopes[counter]
             
-            let unpushedChangesForCurrentScope = unpushedChanges.filter({ $0.databaseWhereStored == scope }).map({ $0.backingRemoteRecord })
+            let unpushedChangesForCurrentScope = unpushedChanges.filter({ $0.scope == scope }).map({ $0.backingRemoteRecord })
             unpushedChangesDictionary[scope] = unpushedChangesForCurrentScope
             
-            let idsOfUnpushedDeletionsForCurrentScope = unpushedDeletions.filter({ $0.databaseWhereStored == scope }).map({ CKRecordID(recordName: $0.identifier) })
+            let idsOfUnpushedDeletionsForCurrentScope = unpushedDeletions.filter({ $0.scope == scope }).map({ CKRecordID(recordName: $0.identifier) })
             idsOfUnpushedDeletionsDictionary[scope] = idsOfUnpushedDeletionsForCurrentScope
             
             counter = counter + 1

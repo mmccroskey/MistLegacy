@@ -84,7 +84,7 @@ class Record: Hashable {
     
     // MARK: - Protected Properties
     
-    internal var databaseWhereStored: CKDatabaseScope?
+    internal var scope: CKDatabaseScope?
     internal var recordZone: CKRecordZone?
     
     internal let backingRemoteRecord: CKRecord
@@ -229,17 +229,17 @@ class Record: Hashable {
                 "ERROR: A dependent Record must be in the same \(typeName) as the Record on which it is dependent. " +
                 "Here are the Records (and respective \(typeName)s) between which you've attempted to create a dependency:" +
                 "PROVIDING RECORD: \(providingRecord)\n" +
-                "PROVIDING \(typeName.uppercased()): \(providingRecord.databaseWhereStored)\n" +
+                "PROVIDING \(typeName.uppercased()): \(providingRecord.scope)\n" +
                 "DEPENDENT RECORD: \(dependentRecord)\n" +
-                "DEPENDENT \(typeName.uppercased()): \(dependentRecord.databaseWhereStored)\n"
+                "DEPENDENT \(typeName.uppercased()): \(dependentRecord.scope)\n"
             )
             
         }
         
-        if dependentRecord.databaseWhereStored == nil {
-            dependentRecord.databaseWhereStored = providingRecord.databaseWhereStored
+        if dependentRecord.scope == nil {
+            dependentRecord.scope = providingRecord.scope
         } else {
-            guard dependentRecord.databaseWhereStored == providingRecord.databaseWhereStored else { mismatchFatalError(with: "database") }
+            guard dependentRecord.scope == providingRecord.scope else { mismatchFatalError(with: "database") }
         }
         
         if dependentRecord.recordZone == nil {
