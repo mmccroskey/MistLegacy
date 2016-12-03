@@ -138,8 +138,70 @@ internal class Queue {
 // MARK: -
 
 
-private class LocalDataCoordinator {
+
+// MARK: - 
+
+
+
+private class DataCoordinator {
     
+    
+    // MARK: - Private Properties
+    
+    private var typeString: String {
+        
+        let mirror = Mirror(reflecting: self)
+        let selfType = mirror.subjectType as! Record.Type
+        let typeString = String(describing: selfType)
+        
+        return typeString
+        
+    }
+    
+    
+    // MARK: - Public Functions
+    
+    func metadata(forKey key:String, retrievalCompleted:((Any?) -> Void)) {
+        
+        var metadata: Any?
+        
+        let execution = {
+            
+            if let selfMetadata = Mist.localMetadataStorage.value(forKey: self.typeString) as? [String : Any?] {
+                metadata = selfMetadata[key]
+            }
+            
+            metadata = nil
+            
+        }
+        
+        let completion = { retrievalCompleted(metadata) }
+        
+        Mist.localMetadataQueue.addOperation(withExecutionBlock: execution, completionBlock: completion)
+        
+    }
+    
+    func setMetadata(_ metadata:Any?, forKey key:String) {
+        
+        Mist.localMetadataQueue.addOperation  {
+            
+            if var selfMetadata = Mist.localMetadataStorage.value(forKey: self.typeString) as? [String : Any?] {
+                
+                selfMetadata[key] = metadata
+                Mist.localMetadataStorage.setValue(selfMetadata, forKey: self.typeString)
+                
+            }
+            
+        }
+        
+    }
+    
+}
+
+
+
+private class LocalDataCoordinator : DataCoordinator {
+
     
     // MARK: - Private Properties
     
@@ -356,6 +418,17 @@ private class LocalDataCoordinator {
             
         }
         
+    }
+    
+}
+
+
+
+// MARK: - 
+
+
+
+private class RemoteDataCoordinator : DataCoordinator {
         
     }
     
@@ -383,15 +456,6 @@ private class LocalDataCoordinator {
         
     }
     
-}
-
-
-
-// MARK: - 
-
-
-
-private class RemoteDataCoordinator {
     
     
     // MARK: - Updating Local Content with Changes from Remote
@@ -524,30 +588,6 @@ private class RemoteDataCoordinator {
             
         }
         
-        
-    }
-    
-    
-    // MARK: Private Functions
-    
-    private func metadata(forKey key:String) -> Any? {
-        
-        if let selfMetadata = Mist.localMetadataStorage.value(forKey: "RemoteDataCoordinator") as? [String : Any?] {
-            return selfMetadata[key]
-        }
-        
-        return nil
-        
-    }
-    
-    private func setMetadata(_ metadata:Any?, forKey key:String) {
-        
-        if var selfMetadata = Mist.localMetadataStorage.value(forKey: "RemoteDataCoordinator") as? [String : Any?] {
-            
-            selfMetadata[key] = metadata
-            Mist.localMetadataStorage.setValue(selfMetadata, forKey: "RemoteDataCoordinator")
-            
-        }
         
     }
     
