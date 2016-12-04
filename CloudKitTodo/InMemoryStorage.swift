@@ -13,13 +13,42 @@ class InMemoryStorage: LocalRecordStorage, LocalMetadataStorage, LocalCachedReco
     
     // MARK: - Private Properties
     
-    private var storedRecords: [StorageScope : [RecordIdentifier : Record]] = [
-        .public  : [:],
-        .private : [:],
-        .shared  : [:]
-    ]
+    private var publicStoredRecords: [RecordIdentifier : Record] = [:]
+    private var userStoredRecords: [RecordIdentifier : [StorageScope : [RecordIdentifier : Record]]] = [:]
     
     private var metadata: [String:Any?] = [:]
+    
+    
+    // MARK: - Private Functions
+    
+    private func scopedStorageForUser(associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, withScope scope:StorageScope) -> [RecordIdentifier : Record] {
+        
+        guard scope != .public else {
+            fatalError("Public records are not associated with a User before being added to the local record store.")
+        }
+        
+        let potentialExistingStorageForUser: [StorageScope : [RecordIdentifier : Record]]? = self.userStoredRecords[userRecordIdentifier]
+        
+        var storageForUser: [StorageScope : [RecordIdentifier : Record]]
+        if let existingStorageForUser = potentialExistingStorageForUser {
+            storageForUser = existingStorageForUser
+        } else {
+            storageForUser = [:]
+        }
+        self.userStoredRecords[userRecordIdentifier] = storageForUser
+        
+        let potentialScopedStorageForUser: [RecordIdentifier : Record]? = self.userStoredRecords[userRecordIdentifier]?[scope]
+        
+        var scopedStorageForUser: [RecordIdentifier : Record]
+        if let existingScopedStorageForUser = potentialScopedStorageForUser {
+            scopedStorageForUser = existingScopedStorageForUser
+        } else {
+            scopedStorageForUser = [:]
+        }
+        
+        return scopedStorageForUser
+        
+    }
     
     
     // MARK: - LocalCachedRecordChangesStorage Protocol Properties
@@ -35,35 +64,72 @@ class InMemoryStorage: LocalRecordStorage, LocalMetadataStorage, LocalCachedReco
     
     // MARK: Adding & Modifying Records
     
-    func addRecord(_ record:Record, toStorageWith scope:StorageScope) {
-        self.storedRecords[scope]![record.identifier] = record
+    func addPublicRecord(_ record:Record) {
+        self.publicStoredRecords[record.identifier] = record
     }
     
+    func addUserRecord(_ record:Record, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, toScope scope:StorageScope) {
+        
+        var storageForUser = self.scopedStorageForUser(associatedWithUserIdentifier: userRecordIdentifier, withScope: scope)
+        storageForUser[record.identifier] = record
+        self.userStoredRecords[userRecordIdentifier]![scope] = storageForUser
+        
+    }
     
     
     // MARK: Removing Records
     
-    func removeRecord(_ record:Record, fromStorageWith scope:StorageScope) {
-        return self.removeRecord(matching: record.identifier, fromStorageWith: scope)
+    func removePublicRecord(_ record:Record) {
+        self.removePublicRecord(matching: record.identifier)
     }
     
-    func removeRecord(matching identifier:RecordIdentifier, fromStorageWith scope:StorageScope) {
-        self.storedRecords[scope]!.removeValue(forKey: identifier)
+    func removePublicRecord(matching identifier:RecordIdentifier) {
+        self.publicStoredRecords.removeValue(forKey: identifier)
+    }
+    
+    func removeUserRecord(_ record:Record, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, fromScope scope:StorageScope) {
+        self.removeUserRecord(matching: record.identifier, associatedWithUserIdentifier: userRecordIdentifier, fromScope: scope)
+    }
+    
+    func removeUserRecord(matching identifier:RecordIdentifier, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, fromScope scope:StorageScope) {
+        
+        var storageForUser = self.scopedStorageForUser(associatedWithUserIdentifier: userRecordIdentifier, withScope: scope)
+        storageForUser.removeValue(forKey: identifier)
+        self.userStoredRecords[userRecordIdentifier]![scope] = storageForUser
+        
     }
     
     
     // MARK: Finding Records
     
-    func record(matching identifier:RecordIdentifier, inStorageWith scope:StorageScope) -> Record? {
-        return self.storedRecords[scope]![identifier]
+    func publicRecord(matching identifier:RecordIdentifier) -> Record? {
+        return self.publicStoredRecords[identifier]
     }
     
-    func records(matching filter:((Record) throws -> Bool), inStorageWith scope:StorageScope) rethrows -> [Record] {
-        return try self.storedRecords[scope]!.values.filter(filter)
+    func publicRecords(matching filter:((Record) throws -> Bool)) rethrows -> [Record] {
+        return try self.publicStoredRecords.values.filter(filter)
     }
     
-    func records(matching predicate:NSPredicate, inStorageWith scope:StorageScope) -> [Record] {
-        return self.records(matching: { predicate.evaluate(with: $0) }, inStorageWith: scope)
+    func publicRecords(matching predicate:NSPredicate) -> [Record] {
+        return self.publicRecords(matching: { predicate.evaluate(with: $0) })
+    }
+    
+    func userRecord(matching identifier:RecordIdentifier, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) -> Record? {
+        
+        let storageForUser = self.scopedStorageForUser(associatedWithUserIdentifier: userRecordIdentifier, withScope: scope)
+        return storageForUser[identifier]
+        
+    }
+    
+    func userRecords(matching filter:((Record) throws -> Bool), associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) rethrows -> [Record]{
+        
+        let storageForUser = self.scopedStorageForUser(associatedWithUserIdentifier: userRecordIdentifier, withScope: scope)
+        return try storageForUser.values.filter(filter)
+        
+    }
+    
+    func userRecords(matching predicate:NSPredicate, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) -> [Record] {
+        return self.userRecords(matching: { predicate.evaluate(with: $0) }, associatedWithUserIdentifier: userRecordIdentifier, inScope: scope)
     }
     
     

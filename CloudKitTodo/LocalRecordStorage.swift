@@ -13,19 +13,28 @@ protocol LocalRecordStorage {
     
     // MARK: - Adding & Modifying Records
     
-    func addRecord(_ record:Record, toStorageWith scope:StorageScope)
+    func addPublicRecord(_ record:Record)
+    func addPrivateRecord(_ record:Record, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier)
+    func addSharedRecord(_ record:Record, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier)
     
     
     // MARK: - Removing Records
     
-    func removeRecord(_ record:Record, fromStorageWith scope:StorageScope)
-    func removeRecord(matching identifier:RecordIdentifier, fromStorageWith scope:StorageScope)
+    func removePublicRecord(_ record:Record)
+    func removePublicRecord(matching identifier:RecordIdentifier)
+    
+    func removeUserRecord(_ record:Record, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, fromScope scope:StorageScope)
+    func removeUserRecord(matching identifier:RecordIdentifier, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, fromScope scope:StorageScope)
     
     
     // MARK: - Finding Records
     
-    func record(matching identifier:RecordIdentifier, inStorageWith scope:StorageScope) -> Record?
-    func records(matching filter:((Record) throws -> Bool), inStorageWith scope:StorageScope) rethrows -> [Record]
-    func records(matching predicate:NSPredicate, inStorageWith scope:StorageScope) -> [Record]
+    func publicRecord(matching identifier:RecordIdentifier) -> Record?
+    func publicRecords(matching filter:((Record) throws -> Bool)) rethrows -> [Record]
+    func publicRecords(matching predicate:NSPredicate) -> [Record]
+    
+    func userRecord(matching identifier:RecordIdentifier, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) -> Record?
+    func userRecords(matching filter:((Record) throws -> Bool), associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) rethrows -> [Record]
+    func userRecords(matching predicate:NSPredicate, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) -> [Record]
     
 }
