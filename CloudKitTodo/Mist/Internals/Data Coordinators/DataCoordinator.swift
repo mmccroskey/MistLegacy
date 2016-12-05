@@ -13,6 +13,9 @@ internal class DataCoordinator {
     
     // MARK: - Private Properties
     
+    // TODO: Implement code to keep this up to date
+    internal var currentUser: CloudKitUser? = CloudKitUser()
+    
     private var typeString: String {
         
         let mirror = Mirror(reflecting: self)

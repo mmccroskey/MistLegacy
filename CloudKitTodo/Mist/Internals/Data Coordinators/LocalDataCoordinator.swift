@@ -14,9 +14,6 @@ internal class LocalDataCoordinator : DataCoordinator {
     
     // MARK: - Private Properties
     
-    // TODO: Implement code to keep this up to date
-    private var currentUser: CloudKitUser? = CloudKitUser()
-    
     private var publicRetrievedRecordsCache: [RecordIdentifier : Record] = [:]
     private var userRetrievedRecordsCache: [RecordIdentifier : [StorageScope : [RecordIdentifier : Record]]] = [:]
     
