@@ -10,6 +10,12 @@ import Foundation
 import CloudKit
 
 
+typealias StorageScope = CKDatabaseScope
+typealias RecordIdentifier = String
+typealias RecordValue = CKRecordValue
+typealias RelationshipDeleteBehavior = CKReferenceAction
+
+
 struct Configuration {
     
     var `public`: Scoped
@@ -30,7 +36,6 @@ struct RecordDescriptor {
     let descriptor: NSPredicate
     
 }
-
 
 
 class Mist {
