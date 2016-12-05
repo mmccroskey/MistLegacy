@@ -135,8 +135,8 @@ struct ZoneBasedDirectionalSyncSummary {
     
     let result: SyncResult
     let errors: [Error]
-    let zoneChangeSummaries: [ZonedSyncSummary]
-    let zoneDeletionSummaries: [ZonedSyncSummary]
+    let zoneChangeSummary: ZonedSyncSummary?
+    let zoneDeletionSummary: ZonedSyncSummary?
     
 }
 
@@ -260,7 +260,7 @@ class Mist {
             
             let preflightingSummary = PreflightingSyncSummary(result: .totalFailure, errors: errors)
             
-            let zonedDirectionalSummary = ZoneBasedDirectionalSyncSummary(result: .totalFailure, errors: [], zoneChangeSummaries: [], zoneDeletionSummaries: [])
+            let zonedDirectionalSummary = ZoneBasedDirectionalSyncSummary(result: .totalFailure, errors: [], zoneChangeSummary: nil, zoneDeletionSummary: nil)
             let directionalSummary = DirectionalSyncSummary(result: .totalFailure)
             let userScopedSummary = UserScopedSyncSummary(result: .totalFailure, errors: [], pullSummary: zonedDirectionalSummary, pushSummary: directionalSummary)
             let publicScopedSummary = PublicScopedSyncSummary(result: .totalFailure, errors: [], pullSummary: directionalSummary, pushSummary: directionalSummary)
@@ -458,11 +458,8 @@ class Mist {
     internal static let localMetadataQueue = Queue()
     internal static let localCachedRecordChangesQueue = Queue()
     
-    
-    // MARK: - Private Properties
-    
-    private static let localDataCoordinator = LocalDataCoordinator()
-    private static let remoteDataCoordinator = RemoteDataCoordinator()
+    internal static let localDataCoordinator = LocalDataCoordinator()
+    internal static let remoteDataCoordinator = RemoteDataCoordinator()
     
 }
 
@@ -517,7 +514,7 @@ internal class Queue {
 
 
 
-private class DataCoordinator {
+internal class DataCoordinator {
     
     
     // MARK: - Private Properties
@@ -574,7 +571,7 @@ private class DataCoordinator {
 
 
 
-private class LocalDataCoordinator : DataCoordinator {
+internal class LocalDataCoordinator : DataCoordinator {
 
     
     // MARK: - Private Properties
@@ -1047,7 +1044,60 @@ private class LocalDataCoordinator : DataCoordinator {
 
 
 
-private class RemoteDataCoordinator : DataCoordinator {
+internal class RemoteDataCoordinator : DataCoordinator {
+    
+    private class CKRecordSet {
+        
+        convenience init(records: [CKRecord]) {
+            self.init()
+            self.records = records
+        }
+        
+        private(set) var records: [CKRecord] = []
+        
+        func insert(_ record:CKRecord) {
+            
+            // Remove the record from the array if it's already in there
+            remove(record)
+            
+            records.append(record)
+            
+        }
+        
+        func remove(_ record:CKRecord) {
+            
+            records = records.filter({ (recordInArray) -> Bool in
+                return recordInArray.recordID.recordName != record.recordID.recordName
+            })
+            
+        }
+        
+        func union(_ otherRecordSet:CKRecordSet) -> CKRecordSet {
+            
+            let selfCopy = CKRecordSet(records: records)
+            
+            let recordsFromOtherSet = otherRecordSet.records
+            for recordFromOtherSet in recordsFromOtherSet {
+                
+                selfCopy.insert(recordFromOtherSet)
+                
+            }
+            
+            return selfCopy
+            
+        }
+        
+        func recordIDs() -> [CKRecordID] {
+            
+            let recordIds = records.map { (record) -> CKRecordID in
+                return record.recordID
+            }
+            
+            return recordIds
+            
+        }
+        
+    }
     
     
     // MARK: - Private Variables and Metadata Accessors
@@ -1297,6 +1347,9 @@ private class RemoteDataCoordinator : DataCoordinator {
     
     }
     
+    
+    // MARK: - Updating Local Content with Changes from Remote
+    
     func performPublicDatabasePull(_ completed:((DirectionalSyncSummary) -> Void)) {
         
         guard let descriptors = Mist.config.public.pullRecordsMatchingDescriptors else {
@@ -1309,24 +1362,164 @@ private class RemoteDataCoordinator : DataCoordinator {
         
     }
     
-    func performPublicDatabasePush(_ completed:((DirectionalSyncSummary) -> Void)) {
-        
-        // TODO: Actually push data
-        completed(DirectionalSyncSummary(result: .success, idsOfRecordsChanged: [], idsOfRecordsDeleted: []))
-        
-    }
-    
     func performDatabasePull(for scope:CKDatabaseScope, completed:((ZoneBasedDirectionalSyncSummary) -> Void)) {
         
-        func deleteInvalidatedZones(forZonesWithIds idsOfZonesToDelete: Set<CKRecordZoneID>, completed:((ZoneBasedDirectionalSyncSummary) -> Void)) {
+        func errorsArray(from optionalError:Error?) -> [Error] {
             
+            var errors: [Error] = []
+            if let error = optionalError {
+                errors.append(error)
+            }
             
+            return errors
             
         }
         
-        func fetchZoneChanges(forZonesWithIds idsOfZonesToFetch: Set<CKRecordZoneID>, completed:((ZoneBasedDirectionalSyncSummary) -> Void)) {
+        func deleteInvalidatedZones(forZonesWithIds idsOfZonesToDelete: Set<CKRecordZoneID>, completed:((ZonedSyncSummary) -> Void)) {
             
+            let recordInADeletedZone: ((Record) throws -> Bool) = { (record) in
+                
+                if let recordZone = record.recordZone {
+                    return idsOfZonesToDelete.contains(recordZone.zoneID)
+                }
+                
+                return false
+                
+            }
+            
+            Mist.localDataCoordinator.retrieveRecords(matching: recordInADeletedZone, inStorageWithScope: scope, fetchDepth: -1) { (operationResult, records) in
+                
+                guard operationResult.succeeded == true else {
+                    
+                    let errors = errorsArray(from: operationResult.error)
+                    completed(ZonedSyncSummary(result: .totalFailure, errors: errors, idsOfRelevantRecords: []))
+                    
+                    return
+                    
+                }
+                
+                if let records = records {
+                    
+                    let recordsSet = Set(records)
+                    
+                    Mist.localDataCoordinator.removeRecords(recordsSet, fromStorageWith: scope, finished: { (removeOperationResult) in
+                        
+                        let recordIds = recordsSet.map({ $0.identifier })
+                        
+                        guard removeOperationResult.succeeded == true else {
+                            
+                            let errors = errorsArray(from: removeOperationResult.error)
+                            completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIds))
+                            
+                            return
+                            
+                        }
+                        
+                        completed(ZonedSyncSummary(result: .success, errors:[], idsOfRelevantRecords: recordIds))
+                        
+                    })
+                    
+                }
+                
+            }
+            
+        }
+        
+        func fetchZoneChanges(forZonesWithIds idsOfZonesToFetch: Set<CKRecordZoneID>, completed:((ZonedSyncSummary) -> Void)) {
+            
+            self.recordZonesServerChangeTokens(forScope: scope) { (zoneIdTokenPairs) in
+                
+                let optionsByRecordZoneId: [CKRecordZoneID : CKFetchRecordZoneChangesOptions] = [:]
 
+                // TODO: Scope metadata to user like other data so we can store server tokens for zones
+                
+                /*
+                for zoneIdTokenPair in zoneIdTokenPairs {
+                    
+                    let recordZoneID = CKRecordZoneID(
+                    
+                    let zoneChangesOptionsInstance = CKFetchRecordZoneChangesOptions()
+                    zoneChangesOptionsInstance.previousServerChangeToken = zoneIdTokenPair.value
+                    optionsByRecordZoneId[zoneIdTokenPair.key] = zoneChangesOptionsInstance
+                    
+                }
+                 */
+                
+                let changesOperation = CKFetchRecordZoneChangesOperation(recordZoneIDs: Array(idsOfZonesToFetch), optionsByRecordZoneID: optionsByRecordZoneId)
+                
+                let changedRecords: CKRecordSet = CKRecordSet()
+                var idsOfDeletedRecords: Set<CKRecordID> = []
+                
+                changesOperation.fetchAllChanges = true
+                changesOperation.recordChangedBlock = { record in changedRecords.insert(record) }
+                changesOperation.recordWithIDWasDeletedBlock = { (idOfDeletedRecord, string) in idsOfDeletedRecords.insert(idOfDeletedRecord) }
+                changesOperation.recordZoneChangeTokensUpdatedBlock = { (recordZoneId, serverChangeToken, clientChangeTokenData) in
+                    
+                    // TODO: Scope metadata to user like other data so we can store server tokens for zones
+                    
+                    /*
+                    if let serverChangeToken = serverChangeToken {
+                        self.setServerChangeToken(serverChangeToken, forRecordZoneWithId: recordZoneId)
+                    } else {
+                        self.setServerChangeToken(nil, forRecordZoneWithId: recordZoneId)
+                    }
+                     */
+                    
+                }
+                
+                changesOperation.fetchRecordZoneChangesCompletionBlock = { error in
+                    
+                    guard error == nil else {
+                        
+                        completed(ZonedSyncSummary(result: .totalFailure, errors: [error!], idsOfRelevantRecords: []))
+                        return
+                        
+                    }
+                    
+                    let recordIdentifiersForDeletedRecords = idsOfDeletedRecords.map({ $0.recordName }) as [RecordIdentifier]
+                    
+                    Mist.localDataCoordinator.retrieveRecords(
+                        matching: { recordIdentifiersForDeletedRecords.contains($0.identifier) }, inStorageWithScope: scope, fetchDepth: -1,
+                        retrievalCompleted: { (fetchOperationResult, records) in
+                            
+                            var recordIds: [RecordIdentifier] = []
+                            var recordsSet: Set<Record> = []
+                            if let records = records {
+                                recordIds = records.map({ $0.identifier })
+                                recordsSet = Set(records)
+                            }
+                        
+                            guard fetchOperationResult.succeeded == true else {
+                                
+                                let errors = errorsArray(from: fetchOperationResult.error)
+                                completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIds))
+                                
+                                return
+                                
+                            }
+                            
+                            Mist.localDataCoordinator.removeRecords(recordsSet, fromStorageWith: scope, finished: { (removeOperationResult) in
+                                
+                                let recordIds = recordsSet.map({ $0.identifier })
+                                
+                                guard removeOperationResult.succeeded == true else {
+                                    
+                                    let errors = errorsArray(from: removeOperationResult.error)
+                                    completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIds))
+                                    
+                                    return
+                                    
+                                }
+                                
+                                completed(ZonedSyncSummary(result: .success, errors:[], idsOfRelevantRecords: recordIds))
+                                
+                            })
+                        
+                    })
+                    
+                }
+                
+            }
             
         }
         
@@ -1345,7 +1538,7 @@ private class RemoteDataCoordinator : DataCoordinator {
             databaseChangesOperation.fetchDatabaseChangesCompletionBlock = { (newToken, more, error) in
 
                 guard error == nil else {
-                    completed(ZoneBasedDirectionalSyncSummary(result: .totalFailure, errors: [error!], zoneChangeSummaries: [], zoneDeletionSummaries: []))
+                    completed(ZoneBasedDirectionalSyncSummary(result: .totalFailure, errors: [error!], zoneChangeSummary: nil, zoneDeletionSummary: nil))
                     return
                 }
 
@@ -1353,29 +1546,37 @@ private class RemoteDataCoordinator : DataCoordinator {
                     self.setDatabaseServerChangeToken(newToken, forScope: scope)
                 }
                 
-                deleteInvalidatedZones(forZonesWithIds: idsOfZonesToDelete, completed: { (zoneBasedDirectionalSyncSummary) in
+                deleteInvalidatedZones(forZonesWithIds: idsOfZonesToDelete, completed: { (zonedDeletionSummary) in
                     
-                    guard zoneBasedDirectionalSyncSummary.result == .success else {
-                        completed(zoneBasedDirectionalSyncSummary)
+                    guard zonedDeletionSummary.result == .success else {
+                        
+                        completed(ZoneBasedDirectionalSyncSummary(
+                            result: .totalFailure, errors: zonedDeletionSummary.errors, zoneChangeSummary: nil, zoneDeletionSummary: zonedDeletionSummary
+                        ))
+                        
                         return
+                        
                     }
                     
-                    fetchZoneChanges(forZonesWithIds: idsOfZonesToFetch, completed: { (zoneBasedDirectionalSyncSummary) in
+                    fetchZoneChanges(forZonesWithIds: idsOfZonesToFetch, completed: { (zonedChangesSummary) in
                         
-                        guard zoneBasedDirectionalSyncSummary.result == .success else {
-                            completed(zoneBasedDirectionalSyncSummary)
+                        guard zonedChangesSummary.result == .success else {
+                            
+                            completed(ZoneBasedDirectionalSyncSummary(
+                                result: .totalFailure, errors: zonedChangesSummary.errors, zoneChangeSummary: zonedChangesSummary, zoneDeletionSummary: zonedDeletionSummary
+                            ))
+                            
                             return
+                            
                         }
                         
-                        
+                        completed(ZoneBasedDirectionalSyncSummary(
+                            result: .success, errors: [], zoneChangeSummary: zonedChangesSummary, zoneDeletionSummary: zonedDeletionSummary
+                        ))
                         
                     })
                     
                 })
-
-//                self.fetchZoneChanges(for: idsOfZonesToFetch, callback: {
-//                    self.deleteInvalidatedZones(for: idsOfZonesToDelete, callback: callback)
-//                })
 
             }
             
@@ -1386,51 +1587,16 @@ private class RemoteDataCoordinator : DataCoordinator {
         })
         
     }
-        
-        
-        
-//        // Pull private and shared changes
-//        let scopes: [CKDatabaseScope] = [.private, .shared]
-//        for scope in scopes {
-//            
-//            self.databaseServerChangeToken(forScope: scope, retrievalCompleted: { (token) in
-//                
-//                let databaseChangesOperation = CKFetchDatabaseChangesOperation(previousServerChangeToken: token)
-//                
-//                var idsOfZonesToFetch: Set<CKRecordZoneID> = []
-//                var idsOfZonesToDelete: Set<CKRecordZoneID> = []
-//                
-//                databaseChangesOperation.fetchAllChanges = true
-//                databaseChangesOperation.recordZoneWithIDChangedBlock = { recordZoneId in idsOfZonesToFetch.insert(recordZoneId) }
-//                databaseChangesOperation.recordZoneWithIDWasDeletedBlock = { recordZoneId in idsOfZonesToDelete.insert(recordZoneId) }
-//                databaseChangesOperation.changeTokenUpdatedBlock = { self.setDatabaseServerChangeToken($0, forScope: scope) }
-//                
-//                databaseChangesOperation.fetchDatabaseChangesCompletionBlock = { (newToken, more, error) in
-//                    
-//                    guard error == nil else {
-//                        print("Database changes could not be fetched due to error: \(error)")
-//                        return
-//                    }
-//                    
-//                    if let newToken = newToken {
-//                        self.metadataManager.setServerChangeToken(newToken, for: databaseType)
-//                    }
-//                    
-//                    self.fetchZoneChanges(for: idsOfZonesToFetch, callback: {
-//                        self.deleteInvalidatedZones(for: idsOfZonesToDelete, callback: callback)
-//                    })
-//                    
-//                }
-//                
-//                let database = self.database(forScope: scope)
-//                database.add(databaseChangesOperation)
-//                
-//            })
-//            
-//        }
     
     
     // MARK: - Updating Remote Content with Changes from Local
+    
+    func performPublicDatabasePush(_ completed:((DirectionalSyncSummary) -> Void)) {
+        
+        // TODO: Actually push data
+        completed(DirectionalSyncSummary(result: .success, idsOfRecordsChanged: [], idsOfRecordsDeleted: []))
+        
+    }
     
     func performDatabasePush(for scope:CKDatabaseScope, completed:((DirectionalSyncSummary) -> Void)) {
         
