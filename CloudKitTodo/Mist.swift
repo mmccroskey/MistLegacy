@@ -12,6 +12,7 @@ import CloudKit
 
 
 typealias StorageScope = CKDatabaseScope
+typealias ZoneIdentifier = String
 
 struct Configuration {
     
@@ -55,16 +56,39 @@ enum SyncDirection {
 struct SyncSummary {
     
     let result: SyncResult
-    let error: Error?
-    let scopedSummaries: [StorageScope : ScopedSyncSummary]
+    let errors: [Error]
+    
+    let preflightingSummary: PreflightingSyncSummary
+    let publicSummary: PublicScopedSyncSummary
+    let privateSummary: UserScopedSyncSummary
+    let sharedSummary: UserScopedSyncSummary
     
 }
 
-struct ScopedSyncSummary {
+struct PreflightingSyncSummary {
     
     let result: SyncResult
-    let error: Error?
-    let directionalSummaries: [SyncDirection : DirectionalSyncSummary]
+    let errors: [Error]
+    
+}
+
+struct PublicScopedSyncSummary {
+    
+    let result: SyncResult
+    let errors: [Error]
+    
+    let pullSummary: DirectionalSyncSummary
+    let pushSummary: DirectionalSyncSummary
+    
+}
+
+struct UserScopedSyncSummary {
+    
+    let result: SyncResult
+    let errors: [Error]
+    
+    let pullSummary: ZoneBasedDirectionalSyncSummary
+    let pushSummary: DirectionalSyncSummary
     
 }
 
@@ -74,7 +98,7 @@ struct DirectionalSyncSummary {
         
         self.result = result
         
-        self.error = nil
+        self.errors = []
         self.idsOfRecordsChanged = []
         self.idsOfRecordsDeleted = []
         
@@ -83,7 +107,7 @@ struct DirectionalSyncSummary {
     init(result: SyncResult, error: Error) {
         
         self.result = result
-        self.error = error
+        self.errors = [error]
         
         self.idsOfRecordsChanged = []
         self.idsOfRecordsDeleted = []
@@ -96,14 +120,31 @@ struct DirectionalSyncSummary {
         self.idsOfRecordsChanged = idsOfRecordsChanged
         self.idsOfRecordsDeleted = idsOfRecordsDeleted
         
-        self.error = nil
+        self.errors = []
         
     }
     
     let result: SyncResult
-    let error: Error?
+    let errors: [Error]
     let idsOfRecordsChanged: [RecordIdentifier]
     let idsOfRecordsDeleted: [RecordIdentifier]
+    
+}
+
+struct ZoneBasedDirectionalSyncSummary {
+    
+    let result: SyncResult
+    let errors: [Error]
+    let zoneChangeSummaries: [ZonedSyncSummary]
+    let zoneDeletionSummaries: [ZonedSyncSummary]
+    
+}
+
+struct ZonedSyncSummary {
+    
+    let result: SyncResult
+    let errors: [Error]
+    let idsOfRelevantRecords: [RecordIdentifier]
     
 }
 
@@ -210,37 +251,186 @@ class Mist {
     
     static func sync(_ qOS:QualityOfService?=QualityOfService.default, finished:((SyncSummary) -> Void)?=nil) {
         
-//        func syncSummaryForFailureBeforeDataIsMoved(_ error:Error?) -> SyncSummary {
-//    
-//            return SyncSummary(result: .totalFailure, error: error, scopedSummaries: [
-//                .public : ScopedSyncSummary(result: .totalFailure, directionalSummaries: [
-//                    .pull : DirectionalSyncSummary(result: .totalFailure, idsOfRecordsChanged: [], idsOfRecordsDeleted: []),
-//                    .push : DirectionalSyncSummary(result: .totalFailure, idsOfRecordsChanged: [], idsOfRecordsDeleted: [])
-//                ]),
-//                .private : ScopedSyncSummary(result: .totalFailure, directionalSummaries: [
-//                    .pull : DirectionalSyncSummary(result: .totalFailure, idsOfRecordsChanged: [], idsOfRecordsDeleted: []),
-//                    .push : DirectionalSyncSummary(result: .totalFailure, idsOfRecordsChanged: [], idsOfRecordsDeleted: [])
-//                ])
-//            ])
-//            
-//        }
+        func syncSummaryForPreflightingFailure(withError error:Error?) -> SyncSummary {
+            
+            var errors: [Error] = []
+            if let error = error {
+                errors.append(error)
+            }
+            
+            let preflightingSummary = PreflightingSyncSummary(result: .totalFailure, errors: errors)
+            
+            let zonedDirectionalSummary = ZoneBasedDirectionalSyncSummary(result: .totalFailure, errors: [], zoneChangeSummaries: [], zoneDeletionSummaries: [])
+            let directionalSummary = DirectionalSyncSummary(result: .totalFailure)
+            let userScopedSummary = UserScopedSyncSummary(result: .totalFailure, errors: [], pullSummary: zonedDirectionalSummary, pushSummary: directionalSummary)
+            let publicScopedSummary = PublicScopedSyncSummary(result: .totalFailure, errors: [], pullSummary: directionalSummary, pushSummary: directionalSummary)
+            
+            let summary = SyncSummary(
+                result: .totalFailure, errors: errors,
+                preflightingSummary: preflightingSummary, publicSummary: publicScopedSummary, privateSummary: userScopedSummary, sharedSummary: userScopedSummary
+            )
+            
+            return summary
+            
+        }
+        
+        func syncSummaryFromDependentSummaries(
+            _ publicPull:DirectionalSyncSummary?, publicPush:DirectionalSyncSummary?,
+            privatePull:ZoneBasedDirectionalSyncSummary?, privatePush:DirectionalSyncSummary?,
+            sharedPull:ZoneBasedDirectionalSyncSummary?, sharedPush:DirectionalSyncSummary?
+        ) -> SyncSummary {
+            
+            guard
+                let publicPullSummary  = publicPull,  let publicPushSummary  = publicPush,
+                let privatePullSummary = privatePull, let privatePushSummary = privatePush,
+                let sharedPullSummary  = sharedPull,  let sharedPushSummary  = sharedPush
+            else {
+                fatalError("Some push summaries were not initialized.")
+            }
+            
+            let preflightingSummary = PreflightingSyncSummary(result: .success, errors: [])
+            
+            let publicSummaryResult: SyncResult
+            if publicPullSummary.result == .success && publicPushSummary.result == .success {
+                publicSummaryResult = .success
+            } else if publicPullSummary.result == .totalFailure && publicPushSummary.result == .totalFailure {
+                publicSummaryResult = .totalFailure
+            } else {
+                publicSummaryResult = .partialFailure
+            }
+            
+            let publicSummaryErrors = (publicPullSummary.errors + publicPushSummary.errors)
+            
+            let publicSummary = PublicScopedSyncSummary(
+                result: publicSummaryResult, errors: publicSummaryErrors,
+                pullSummary: publicPullSummary, pushSummary: publicPushSummary
+            )
+            
+            func syncResultFromChildSummaries(_ pullSummary:ZoneBasedDirectionalSyncSummary, pushSummary:DirectionalSyncSummary) -> SyncResult {
+                
+                let summaryResult: SyncResult
+                if pullSummary.result == .success && pushSummary.result == .success {
+                    summaryResult = .success
+                } else if pullSummary.result == .totalFailure && pushSummary.result == .totalFailure {
+                    summaryResult = .totalFailure
+                } else {
+                    summaryResult = .partialFailure
+                }
+                
+                return summaryResult
+                
+            }
+            
+            let privateSyncResult = syncResultFromChildSummaries(privatePullSummary, pushSummary: privatePushSummary)
+            let privateErrors = (privatePullSummary.errors + privatePushSummary.errors)
+            
+            let privateSummary = UserScopedSyncSummary(
+                result: privateSyncResult, errors: privateErrors,
+                pullSummary: privatePullSummary, pushSummary: privatePushSummary
+            )
+            
+            let sharedSyncResult = syncResultFromChildSummaries(sharedPullSummary, pushSummary: sharedPushSummary)
+            let sharedErrors = (sharedPullSummary.errors + sharedPushSummary.errors)
+            
+            let sharedSummary = UserScopedSyncSummary(
+                result: sharedSyncResult, errors: sharedErrors,
+                pullSummary: sharedPullSummary, pushSummary: sharedPushSummary
+            )
+            
+            let masterSyncResult: SyncResult
+            if preflightingSummary.result == .success && publicSummary.result == .success && privateSummary.result == .success && sharedSummary.result == .success {
+                
+                masterSyncResult = .success
+                
+            } else if preflightingSummary.result == .totalFailure && publicSummary.result == .totalFailure &&
+                privateSummary.result == .totalFailure && sharedSummary.result == .totalFailure {
+                
+                masterSyncResult = .totalFailure
+                
+            } else {
+                
+                masterSyncResult = .partialFailure
+                
+            }
+            
+            let masterErrors = (preflightingSummary.errors + publicSummary.errors + privateSummary.errors + sharedSummary.errors)
+            
+            let masterSummary = SyncSummary(
+                result: masterSyncResult, errors: masterErrors, preflightingSummary: preflightingSummary,
+                publicSummary: publicSummary, privateSummary: privateSummary, sharedSummary: sharedSummary
+            )
+            
+            return masterSummary
+            
+        }
         
         let remote = self.remoteDataCoordinator
         remote.confirmICloudAvailable { (result) in
             remote.confirmUserAuthenticated(result, completion: { (result) in
                 remote.confirmUserRecordExists(result, completion: { (result) in
                     
-//                    guard result.success == true else {
-//                        
-//                        if let finished = finished {
-//                            finished(syncSummaryForFailureBeforeDataIsMoved(result.error))
-//                        }
-//                        
-//                        return
-//                        
-//                    }
+                    guard result.success == true else {
+                        
+                        if let finished = finished {
+                            finished(syncSummaryForPreflightingFailure(withError: result.error))
+                        }
+                        
+                        return
+                        
+                    }
                     
+                    var publicPullSummary: DirectionalSyncSummary?
+                    var publicPushSummary: DirectionalSyncSummary?
+                    var privatePullSummary: ZoneBasedDirectionalSyncSummary?
+                    var privatePushSummary: DirectionalSyncSummary?
+                    var sharedPullSummary: ZoneBasedDirectionalSyncSummary?
+                    var sharedPushSummary: DirectionalSyncSummary?
                     
+                    remote.performPublicDatabasePull({ (returnedPublicPullSummary) in
+                        
+                        publicPullSummary = returnedPublicPullSummary
+                        
+                        remote.performPublicDatabasePush({ (returnedPublicPushSummary) in
+                            
+                            publicPushSummary = returnedPublicPushSummary
+                            
+                            remote.performDatabasePull(for: .private, completed: { (returnedPrivatePullSummary) in
+                                
+                                privatePullSummary = returnedPrivatePullSummary
+                                
+                                remote.performDatabasePush(for: .private, completed: { (returnedPrivatePushSummary) in
+                                    
+                                    privatePushSummary = returnedPrivatePushSummary
+                                    
+                                    remote.performDatabasePull(for: .shared, completed: { (returnedSharedPullSummary) in
+                                        
+                                        sharedPullSummary = returnedSharedPullSummary
+                                        
+                                        remote.performDatabasePush(for: .shared, completed: { (returnedSharedPushSummary) in
+                                            
+                                            sharedPushSummary = returnedSharedPushSummary
+                                            
+                                            let masterSummary = syncSummaryFromDependentSummaries(
+                                                publicPullSummary, publicPush: publicPushSummary,
+                                                privatePull: privatePullSummary, privatePush: privatePushSummary,
+                                                sharedPull: sharedPullSummary, sharedPush: sharedPushSummary
+                                            )
+                                            
+                                            if let finished = finished {
+                                                finished(masterSummary)
+                                            }
+                                            
+                                        })
+                                        
+                                    })
+                                    
+                                })
+                                
+                            })
+                            
+                        })
+                        
+                    })
                     
                 })
             })
@@ -1126,7 +1316,19 @@ private class RemoteDataCoordinator : DataCoordinator {
         
     }
     
-    func performDatabasePull(for scope:CKDatabaseScope, completed:((DirectionalSyncSummary) -> Void)) {
+    func performDatabasePull(for scope:CKDatabaseScope, completed:((ZoneBasedDirectionalSyncSummary) -> Void)) {
+        
+        func deleteInvalidatedZones(forZonesWithIds idsOfZonesToDelete: Set<CKRecordZoneID>, completed:((ZoneBasedDirectionalSyncSummary) -> Void)) {
+            
+            
+            
+        }
+        
+        func fetchZoneChanges(forZonesWithIds idsOfZonesToFetch: Set<CKRecordZoneID>, completed:((ZoneBasedDirectionalSyncSummary) -> Void)) {
+            
+
+            
+        }
         
         self.databaseServerChangeToken(forScope: scope, retrievalCompleted: { (token) in
             
@@ -1143,14 +1345,33 @@ private class RemoteDataCoordinator : DataCoordinator {
             databaseChangesOperation.fetchDatabaseChangesCompletionBlock = { (newToken, more, error) in
 
                 guard error == nil else {
-                    completed(DirectionalSyncSummary(result: .totalFailure, error: error!))
+                    completed(ZoneBasedDirectionalSyncSummary(result: .totalFailure, errors: [error!], zoneChangeSummaries: [], zoneDeletionSummaries: []))
                     return
                 }
 
                 if let newToken = newToken {
                     self.setDatabaseServerChangeToken(newToken, forScope: scope)
-
                 }
+                
+                deleteInvalidatedZones(forZonesWithIds: idsOfZonesToDelete, completed: { (zoneBasedDirectionalSyncSummary) in
+                    
+                    guard zoneBasedDirectionalSyncSummary.result == .success else {
+                        completed(zoneBasedDirectionalSyncSummary)
+                        return
+                    }
+                    
+                    fetchZoneChanges(forZonesWithIds: idsOfZonesToFetch, completed: { (zoneBasedDirectionalSyncSummary) in
+                        
+                        guard zoneBasedDirectionalSyncSummary.result == .success else {
+                            completed(zoneBasedDirectionalSyncSummary)
+                            return
+                        }
+                        
+                        
+                        
+                    })
+                    
+                })
 
 //                self.fetchZoneChanges(for: idsOfZonesToFetch, callback: {
 //                    self.deleteInvalidatedZones(for: idsOfZonesToDelete, callback: callback)
@@ -1210,6 +1431,10 @@ private class RemoteDataCoordinator : DataCoordinator {
     
     
     // MARK: - Updating Remote Content with Changes from Local
+    
+    func performDatabasePush(for scope:CKDatabaseScope, completed:((DirectionalSyncSummary) -> Void)) {
+        
+    }
     
     func pushLocalChanges(_ previousResult:SyncStepResult, completion:SyncStepCompletion) {
         
