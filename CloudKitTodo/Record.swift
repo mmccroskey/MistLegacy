@@ -9,9 +9,7 @@
 import Foundation
 import CloudKit
 
-typealias RecordIdentifier = String
-typealias RecordValue = CKRecordValue
-typealias RelationshipDeleteBehavior = CKReferenceAction
+
 
 internal struct RelatedRecordData {
     

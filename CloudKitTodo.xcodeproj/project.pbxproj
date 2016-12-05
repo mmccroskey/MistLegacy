@@ -21,6 +21,12 @@
 		8D8343BE1DEF227C009DF3CC /* CloudKitUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343BD1DEF227C009DF3CC /* CloudKitUser.swift */; };
 		8D8343C41DEF78D5009DF3CC /* LocalRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C31DEF78D5009DF3CC /* LocalRecordStorage.swift */; };
 		8D8343C61DEF7B80009DF3CC /* InMemoryStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8343C51DEF7B80009DF3CC /* InMemoryStorage.swift */; };
+		8D8659F61DF6293600A46879 /* DataCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8659F51DF6293600A46879 /* DataCoordinator.swift */; };
+		8D8659F81DF6297000A46879 /* LocalDataCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8659F71DF6297000A46879 /* LocalDataCoordinator.swift */; };
+		8D8659FA1DF629AC00A46879 /* RemoteDataCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8659F91DF629AC00A46879 /* RemoteDataCoordinator.swift */; };
+		8D8659FC1DF629F000A46879 /* Queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8659FB1DF629F000A46879 /* Queue.swift */; };
+		8D8659FE1DF62A2600A46879 /* SynchronizationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8659FD1DF62A2600A46879 /* SynchronizationCoordinator.swift */; };
+		8D865A001DF62B1800A46879 /* Typealiases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D8659FF1DF62B1800A46879 /* Typealiases.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +47,12 @@
 		8D8343BD1DEF227C009DF3CC /* CloudKitUser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CloudKitUser.swift; sourceTree = "<group>"; };
 		8D8343C31DEF78D5009DF3CC /* LocalRecordStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalRecordStorage.swift; sourceTree = "<group>"; };
 		8D8343C51DEF7B80009DF3CC /* InMemoryStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InMemoryStorage.swift; sourceTree = "<group>"; };
+		8D8659F51DF6293600A46879 /* DataCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataCoordinator.swift; sourceTree = "<group>"; };
+		8D8659F71DF6297000A46879 /* LocalDataCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalDataCoordinator.swift; sourceTree = "<group>"; };
+		8D8659F91DF629AC00A46879 /* RemoteDataCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RemoteDataCoordinator.swift; sourceTree = "<group>"; };
+		8D8659FB1DF629F000A46879 /* Queue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Queue.swift; sourceTree = "<group>"; };
+		8D8659FD1DF62A2600A46879 /* SynchronizationCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SynchronizationCoordinator.swift; sourceTree = "<group>"; };
+		8D8659FF1DF62B1800A46879 /* Typealiases.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Typealiases.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,6 +102,12 @@
 				8D6B1D991DF07B9000E65300 /* LocalMetadataStorage.swift */,
 				8D6B1D9B1DF07DE500E65300 /* LocalCachedRecordChangesStorage.swift */,
 				8D6B1D9D1DF0CAC000E65300 /* Mist.swift */,
+				8D8659F51DF6293600A46879 /* DataCoordinator.swift */,
+				8D8659F71DF6297000A46879 /* LocalDataCoordinator.swift */,
+				8D8659F91DF629AC00A46879 /* RemoteDataCoordinator.swift */,
+				8D8659FB1DF629F000A46879 /* Queue.swift */,
+				8D8659FD1DF62A2600A46879 /* SynchronizationCoordinator.swift */,
+				8D8659FF1DF62B1800A46879 /* Typealiases.swift */,
 			);
 			path = CloudKitTodo;
 			sourceTree = "<group>";
@@ -183,12 +201,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8D865A001DF62B1800A46879 /* Typealiases.swift in Sources */,
 				8D6B1D9C1DF07DE500E65300 /* LocalCachedRecordChangesStorage.swift in Sources */,
+				8D8659FC1DF629F000A46879 /* Queue.swift in Sources */,
 				8D6B1D9A1DF07B9000E65300 /* LocalMetadataStorage.swift in Sources */,
+				8D8659F81DF6297000A46879 /* LocalDataCoordinator.swift in Sources */,
 				8D171BD91DEF0FD400EA1597 /* ViewController.swift in Sources */,
+				8D8659FE1DF62A2600A46879 /* SynchronizationCoordinator.swift in Sources */,
 				8D8343BE1DEF227C009DF3CC /* CloudKitUser.swift in Sources */,
 				8D8343B91DEF13F1009DF3CC /* Record.swift in Sources */,
+				8D8659FA1DF629AC00A46879 /* RemoteDataCoordinator.swift in Sources */,
 				8D6B1D9E1DF0CAC000E65300 /* Mist.swift in Sources */,
+				8D8659F61DF6293600A46879 /* DataCoordinator.swift in Sources */,
 				8D171BD71DEF0FD400EA1597 /* AppDelegate.swift in Sources */,
 				8D8343C41DEF78D5009DF3CC /* LocalRecordStorage.swift in Sources */,
 				8D8343C61DEF7B80009DF3CC /* InMemoryStorage.swift in Sources */,
