@@ -87,6 +87,7 @@ class Record: Hashable {
     
     internal var scope: CKDatabaseScope?
     internal var recordZone: CKRecordZone?
+    internal var share: CKShare?
     
     internal let backingRemoteRecord: CKRecord
     
