@@ -13,11 +13,19 @@ protocol LocalCachedRecordChangesStorage {
     
     // MARK: - Caching Record Modifications
     
-    var modifiedRecordsAwaitingPushToCloud: Set<Record> { get set }
+    var publicModifiedRecordsAwaitingPushToCloud: Set<Record> { get set }
+    
+    func userModifiedRecordsAwaitingPushToCloud(identifiedBy userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) -> Set<Record>
+    func addUserModifiedRecordAwaitingPushToCloud(_ record:Record, identifiedBy userRecordIdentifier:RecordIdentifier, toScope scope:StorageScope)
+    func removeUserModifiedRecordAwaitingPushToCloud(_ record:Record, identifiedBy userRecordIdentifier:RecordIdentifier, fromScope scope:StorageScope)
+    
     
     
     // MARK: - Caching Record Deletions
     
-    var deletedRecordsAwaitingPushToCloud: Set<Record> { get set }
+    var publicDeletedRecordsAwaitingPushToCloud: Set<Record> { get set }
+    func userDeletedRecordsAwaitingPushToCloud(identifiedBy userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) -> Set<Record>
+    func addUserDeletedRecordAwaitingPushToCloud(_ record:Record, identifiedBy userRecordIdentifier:RecordIdentifier, toScope scope:StorageScope)
+    func removeUserDeletedRecordAwaitingPushToCloud(_ record:Record, identifiedBy userRecordIdentifier:RecordIdentifier, fromScope scope:StorageScope)
     
 }

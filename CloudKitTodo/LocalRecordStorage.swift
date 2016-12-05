@@ -14,8 +14,7 @@ protocol LocalRecordStorage {
     // MARK: - Adding & Modifying Records
     
     func addPublicRecord(_ record:Record)
-    func addPrivateRecord(_ record:Record, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier)
-    func addSharedRecord(_ record:Record, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier)
+    func addUserRecord(_ record:Record, identifiedBy userRecordIdentifier:RecordIdentifier, toScope scope:StorageScope)
     
     
     // MARK: - Removing Records
@@ -23,8 +22,8 @@ protocol LocalRecordStorage {
     func removePublicRecord(_ record:Record)
     func removePublicRecord(matching identifier:RecordIdentifier)
     
-    func removeUserRecord(_ record:Record, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, fromScope scope:StorageScope)
-    func removeUserRecord(matching identifier:RecordIdentifier, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, fromScope scope:StorageScope)
+    func removeUserRecord(_ record:Record, identifiedBy userRecordIdentifier:RecordIdentifier, fromScope scope:StorageScope)
+    func removeUserRecord(matching identifier:RecordIdentifier, identifiedBy userRecordIdentifier:RecordIdentifier, fromScope scope:StorageScope)
     
     
     // MARK: - Finding Records
@@ -33,8 +32,8 @@ protocol LocalRecordStorage {
     func publicRecords(matching filter:((Record) throws -> Bool)) rethrows -> [Record]
     func publicRecords(matching predicate:NSPredicate) -> [Record]
     
-    func userRecord(matching identifier:RecordIdentifier, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) -> Record?
-    func userRecords(matching filter:((Record) throws -> Bool), associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) rethrows -> [Record]
-    func userRecords(matching predicate:NSPredicate, associatedWithUserIdentifier userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) -> [Record]
+    func userRecord(matching identifier:RecordIdentifier, identifiedBy userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) -> Record?
+    func userRecords(matching filter:((Record) throws -> Bool), identifiedBy userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) rethrows -> [Record]
+    func userRecords(matching predicate:NSPredicate, identifiedBy userRecordIdentifier:RecordIdentifier, inScope scope:StorageScope) -> [Record]
     
 }
