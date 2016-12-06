@@ -26,9 +26,6 @@ class Record: Hashable {
     internal init(backingRemoteRecord:CKRecord?=nil) {
         
         let typeString = String(describing: Record.type())
-        guard typeString != "Record" else {
-            fatalError("Record is an abstract class; it must not be directly instantiated.")
-        }
         
         if let backingRemoteRecord = backingRemoteRecord {
             
