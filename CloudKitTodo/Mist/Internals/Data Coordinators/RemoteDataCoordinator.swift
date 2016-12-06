@@ -322,8 +322,71 @@ internal class RemoteDataCoordinator : DataCoordinator {
             return
         }
         
-        // TODO: Actually pull data matching descriptors
-        completed(DirectionalSyncSummary(result: .success, idsOfRecordsChanged: [], idsOfRecordsDeleted: []))
+        for descriptor in descriptors {
+            
+            let recordTypeString = String(describing: descriptor.type)
+            let query = CKQuery(recordType: recordTypeString, predicate: descriptor.descriptor)
+            
+            var queryCursor: CKQueryCursor? = nil
+            var fetchedRecords: Set<CKRecord> = []
+            
+            func performQuery() {
+                
+                let queryOperation = CKQueryOperation(query: query)
+                queryOperation.cursor = queryCursor
+                queryOperation.recordFetchedBlock = { fetchedRecords.insert($0) }
+                queryOperation.queryCompletionBlock = { (cursor, error) in
+                    
+                    guard error == nil else {
+                        
+                        let result: SyncResult = (queryCursor == nil) ? .totalFailure : .partialFailure
+                        completed(DirectionalSyncSummary(result: result, error: error!))
+                        return
+                        
+                    }
+                    
+                    if let cursor = cursor {
+                        
+                        queryCursor = cursor
+                        performQuery()
+                        
+                    } else {
+                        
+                        
+                        var mistRecords: Set<Record> = []
+                        for fetchedRecord in fetchedRecords {
+                            
+                            let mistRecord = Record(backingRemoteRecord: fetchedRecord)
+                            mistRecords.insert(mistRecord)
+                            
+                        }
+                        
+                        Mist.localDataCoordinator.addRecords(mistRecords, toStorageWith: .public, finished: { (storageOperationResult) in
+                            
+                            guard storageOperationResult.succeeded == true else {
+                                
+                                if let error = storageOperationResult.error {
+                                    completed(DirectionalSyncSummary(result: .partialFailure, error: error))
+                                } else {
+                                    completed(DirectionalSyncSummary(result: .partialFailure))
+                                }
+                                
+                                return
+                                
+                            }
+                            
+                            let recordIdentifiers = fetchedRecords.map({ $0.recordID.recordName })
+                            completed(DirectionalSyncSummary(result: .success, idsOfRecordsChanged: recordIdentifiers, idsOfRecordsDeleted: []))
+                            
+                        })
+                        
+                    }
+                    
+                }
+                
+            }
+            
+        }
         
     }
     
@@ -579,137 +642,74 @@ internal class RemoteDataCoordinator : DataCoordinator {
     // MARK: - Updating Remote Content with Changes from Local
     
     func performPublicDatabasePush(_ completed:((DirectionalSyncSummary) -> Void)) {
-        
-        // TODO: Actually push data
-        completed(DirectionalSyncSummary(result: .success, idsOfRecordsChanged: [], idsOfRecordsDeleted: []))
-        
+        self.performDatabasePush(for: .public, completed: completed)
     }
     
     func performDatabasePush(for scope:CKDatabaseScope, completed:((DirectionalSyncSummary) -> Void)) {
         
-    }
-    
-    func pushLocalChanges(_ previousResult:SyncStepResult, completion:SyncStepCompletion) {
+        let unpushedChanges: Set<Record>
+        let unpushedDeletions: Set<Record>
+        
+        switch scope {
+            
+        case .public:
+            unpushedChanges = Mist.localCachedRecordChangesStorage.publicModifiedRecordsAwaitingPushToCloud
+            unpushedDeletions = Mist.localCachedRecordChangesStorage.publicDeletedRecordsAwaitingPushToCloud
+            
+        default:
+            
+            guard let currentUserIdentifier = self.currentUser?.identifier else {
+                
+                let noCurrentUserError = ErrorStruct(
+                    code: 401, title: "User Not Authenticated",
+                    failureReason: "The user is not currently logged in to iCloud. The user must be logged in in order for us to save data to the private or shared scopes.",
+                    description: "Get the user to log in and try this request again."
+                )
+                
+                completed(DirectionalSyncSummary(result: .totalFailure, error: noCurrentUserError.errorObject()))
+                
+                return
+                
+            }
+            
+            unpushedChanges = Mist.localCachedRecordChangesStorage.userModifiedRecordsAwaitingPushToCloud(identifiedBy: currentUserIdentifier, inScope: scope)
+            unpushedDeletions = Mist.localCachedRecordChangesStorage.userDeletedRecordsAwaitingPushToCloud(identifiedBy: currentUserIdentifier, inScope: scope)
+            
+        }
+        
+        let unpushedChangesCKRecords = unpushedChanges.map({ $0.backingRemoteRecord })
+        let unpushedDeletionsCKRecordIDs = unpushedDeletions.map({ CKRecordID(recordName: $0.identifier) })
         
         
+        let modifyOperation = CKModifyRecordsOperation(recordsToSave: unpushedChangesCKRecords, recordIDsToDelete: unpushedDeletionsCKRecordIDs)
+        modifyOperation.modifyRecordsCompletionBlock = { (savedRecords, recordIDsOfDeletedRecords, operationError) in
+
+            guard operationError == nil else {
+                
+                completed(DirectionalSyncSummary(result: .totalFailure, error: operationError!))
+                return
+                
+            }
+            
+            
+            var idsOfRecordsChanged: [RecordIdentifier] = []
+            if let savedRecords = savedRecords {
+                idsOfRecordsChanged = savedRecords.map({ $0.recordID.recordName })
+            }
+            
+            var idsOfRecordsDeleted: [RecordIdentifier] = []
+            if let recordIDsOfDeletedRecords = recordIDsOfDeletedRecords {
+                idsOfRecordsDeleted = recordIDsOfDeletedRecords.map({ $0.recordName })
+            }
+            
+            completed(DirectionalSyncSummary(result: .success, idsOfRecordsChanged: idsOfRecordsChanged, idsOfRecordsDeleted: idsOfRecordsDeleted))
+
+        }
         
-        //        let scopes: [CKDatabaseScope] = [.public, .shared, .private]
-        //
-        //        let unpushedChanges = Mist.localCachedRecordChangesStorage.modifiedRecordsAwaitingPushToCloud
-        //        let unpushedDeletions = Mist.localCachedRecordChangesStorage.deletedRecordsAwaitingPushToCloud
-        //
-        //        var unpushedChangesDictionary: [CKDatabaseScope : [CKRecord]] = [:]
-        //        var idsOfUnpushedDeletionsDictionary: [CKDatabaseScope : [CKRecordID]] = [:]
-        //
-        //        // Gather up all the unpushed changes and deletions and group them by database scope
-        //        var counter = 0
-        //        while counter < scopes.count {
-        //
-        //            let scope = scopes[counter]
-        //
-        //            let unpushedChangesForCurrentScope = unpushedChanges.filter({ $0.scope == scope }).map({ $0.backingRemoteRecord })
-        //            unpushedChangesDictionary[scope] = unpushedChangesForCurrentScope
-        //
-        //            let idsOfUnpushedDeletionsForCurrentScope = unpushedDeletions.filter({ $0.scope == scope }).map({ CKRecordID(recordName: $0.identifier) })
-        //            idsOfUnpushedDeletionsDictionary[scope] = idsOfUnpushedDeletionsForCurrentScope
-        //
-        //            counter = counter + 1
-        //
-        //        }
-        //
-        //        var modifyOperations: [CKDatabaseScope : CKModifyRecordsOperation] = [:]
-        //        var finishedStates: [CKDatabaseScope : Bool] = [
-        //
-        //            .public : false,
-        //            .shared : false,
-        //            .private : false
-        //
-        //        ]
-        //
-        //        // Create a modify operation for each database scope
-        //        for scope in scopes {
-        //
-        //            let recordsToSave = unpushedChangesDictionary[scope]
-        //            let recordIdsToDelete = idsOfUnpushedDeletionsDictionary[scope]
-        //
-        //            let modifyOperation = CKModifyRecordsOperation(recordsToSave: recordsToSave, recordIDsToDelete: recordIdsToDelete)
-        //            modifyOperation.modifyRecordsCompletionBlock = { (savedRecords, recordIDsOfDeletedRecords, operationError) in
-        //
-        //                // Mark this database's modify operation as complete
-        //                finishedStates[scope] = true
-        //
-        //                // If there's an error, then return it and bail out of everything
-        //                // (since the operations have a linear dependency, bailing out of
-        //                // a particular operation bails out of any that follow)
-        //                if let operationError = operationError {
-        //                    completion(finishedStates, false, operationError)
-        //                    return
-        //                }
-        //
-        //                // If this is the last of the three operations
-        //                if scope == .private {
-        //                    completion(finishedStates, true, nil)
-        //                }
-        //
-        //            }
-        //
-        //        }
-        //
-        //        func dictionaryKeysMismatchFatalError(_ name:String, dictionary:[CKDatabaseScope:Any]) -> Never {
-        //
-        //            fatalError(
-        //                "The keys for the \(name) dictionary and the scopes dictionary must match, " +
-        //                    "but they don't. Here are those dictionaries:\n" +
-        //                    "\(name): \(dictionary)\n" +
-        //                    "scopes: \(scopes)\n"
-        //            )
-        //
-        //        }
-        //
-        //        // Make each modify operation dependent upon the previous database scope
-        //        counter = (scopes.count - 1)
-        //        while counter > 0 {
-        //
-        //            let currentScope = scopes[counter]
-        //            guard let currentModifyOperation = modifyOperations[currentScope] else {
-        //                dictionaryKeysMismatchFatalError("modifyOperations", dictionary: modifyOperations)
-        //            }
-        //
-        //            let previousScope = scopes[counter - 1]
-        //            guard let previousModifyOperation = modifyOperations[previousScope] else {
-        //                dictionaryKeysMismatchFatalError("modifyOperations", dictionary: modifyOperations)
-        //            }
-        //
-        //            currentModifyOperation.addDependency(previousModifyOperation)
-        //
-        //            counter = counter - 1
-        //
-        //        }
-        //
-        //        let databases: [CKDatabaseScope : CKDatabase] = [
-        //            
-        //            .public : self.container.publicCloudDatabase,
-        //            .shared : self.container.sharedCloudDatabase,
-        //            .private : self.container.privateCloudDatabase
-        //            
-        //        ]
-        //        
-        //        // Add each modify operation to its respective database's operation queue
-        //        for scope in scopes {
-        //            
-        //            guard let database = databases[scope] else {
-        //                dictionaryKeysMismatchFatalError("databases", dictionary: databases)
-        //            }
-        //            
-        //            guard let modifyOperation = modifyOperations[scope] else {
-        //                dictionaryKeysMismatchFatalError("modifyOperations", dictionary: modifyOperations)
-        //            }
-        //            
-        //            database.add(modifyOperation)
-        //            
-        //        }
-        
+        let database = self.database(forScope: scope)
+        database.add(modifyOperation)
         
     }
     
 }
+
