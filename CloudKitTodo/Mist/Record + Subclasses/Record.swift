@@ -10,6 +10,7 @@ import Foundation
 import CloudKit
 
 
+typealias RecordValue = Any
 
 internal struct RelatedRecordData {
     

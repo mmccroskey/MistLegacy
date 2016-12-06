@@ -12,7 +12,6 @@ import CloudKit
 
 typealias StorageScope = CKDatabaseScope
 typealias RecordIdentifier = String
-typealias RecordValue = CKRecordValue
 typealias RelationshipDeleteBehavior = CKReferenceAction
 typealias FilterClosure = ((Record) throws -> Bool)
 
