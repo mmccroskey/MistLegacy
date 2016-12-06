@@ -116,11 +116,11 @@ class Record: Hashable {
     
     // MARK: - Interacting with Record Properties
     
-    func property(forKey key:String) -> CKRecordValue? {
+    func propertyValue(forKey key:String) -> RecordValue? {
         
-        if let property = self.backingRemoteRecord.object(forKey: key) {
+        if let propertyValue = self.backingRemoteRecord.object(forKey: key) {
             
-            guard !(property is CKReference) else {
+            guard !(propertyValue is CKReference) else {
                 
                 fatalError(
                     "Do not fetch relationships using object(forKey:) -- use " +
@@ -131,7 +131,7 @@ class Record: Hashable {
                 
             }
             
-            return property
+            return propertyValue
             
         }
 
@@ -139,9 +139,9 @@ class Record: Hashable {
         
     }
     
-    func setProperty(_ property:CKRecordValue?, forKey key:String) {
+    func setPropertyValue(_ propertyValue:RecordValue?, forKey key:String) {
         
-        guard !(property is CKReference) else {
+        guard !(propertyValue is CKReference) else {
             
             fatalError(
                 "Do not set relationships using setObject(forKey:) -- use " +
@@ -152,7 +152,7 @@ class Record: Hashable {
             
         }
         
-        self.backingRemoteRecord.setObject(property, forKey: key)
+        self.backingRemoteRecord.setObject(propertyValue, forKey: key)
         
     }
     
