@@ -178,8 +178,16 @@ internal class LocalDataCoordinator : DataCoordinator {
     }
     
     func retrieveRecords(
-        matching filter:((Record) throws -> Bool), inStorageWithScope scope:StorageScope,
+        withType type:Record.Type?=nil, matching filter:((Record) throws -> Bool), inStorageWithScope scope:StorageScope,
         fetchDepth:Int, retrievalCompleted:((RecordOperationResult, [Record]?) -> Void)) {
+        
+        let typeFilter: ((Record) throws -> Bool)?
+        if let type = type {
+            let typeString = String(describing: type)
+            typeFilter = { $0.typeString == typeString }
+        } else {
+            typeFilter = nil
+        }
         
         var success: Bool = true
         var error: Error?
@@ -191,14 +199,28 @@ internal class LocalDataCoordinator : DataCoordinator {
                 
                 if scope == .public {
                     
-                    let cachedRecords = try self.publicRetrievedRecordsCache.values.filter(filter)
+                    let initialRecords = try self.publicRetrievedRecordsCache.values.filter(filter)
+                    
+                    let cachedRecords: [Record]
+                    if let typeFilter = typeFilter {
+                        cachedRecords = try initialRecords.filter(typeFilter)
+                    } else {
+                        cachedRecords = initialRecords
+                    }
+                    
                     if cachedRecords.count > 0 {
                         
                         records = cachedRecords
                         
                     } else {
                         
-                        try records = Mist.localRecordStorage.publicRecords(matching: filter)
+                        let initialRecords = try Mist.localRecordStorage.publicRecords(matching: filter)
+                        
+                        if let typeFilter = typeFilter {
+                            records = try initialRecords.filter(typeFilter)
+                        } else {
+                            records = initialRecords
+                        }
                         
                         for record in records {
                             self.publicRetrievedRecordsCache[record.identifier] = record
@@ -225,14 +247,28 @@ internal class LocalDataCoordinator : DataCoordinator {
                     
                     
                     var userScopedRecordsCache = self.scopedRecordsCacheForUser(identifiedBy: currentUserIdentifier, withScope: scope)
-                    let cachedRecords = try userScopedRecordsCache.values.filter(filter)
+                    let initialRecords = try userScopedRecordsCache.values.filter(filter)
+                    
+                    let cachedRecords: [Record]
+                    if let typeFilter = typeFilter {
+                        cachedRecords = try initialRecords.filter(typeFilter)
+                    } else {
+                        cachedRecords = initialRecords
+                    }
+                    
                     if cachedRecords.count > 0 {
                         
                         records = cachedRecords
                         
                     } else {
                         
-                        try records = Mist.localRecordStorage.userRecords(matching: filter, identifiedBy: currentUserIdentifier, inScope: scope)
+                        let initialRecords = try Mist.localRecordStorage.userRecords(matching: filter, identifiedBy: currentUserIdentifier, inScope: scope)
+                        
+                        if let typeFilter = typeFilter {
+                            records = try initialRecords.filter(typeFilter)
+                        } else {
+                            records = initialRecords
+                        }
                         
                         for record in records {
                             userScopedRecordsCache[record.identifier] = record
@@ -281,10 +317,10 @@ internal class LocalDataCoordinator : DataCoordinator {
     }
     
     func retrieveRecords(
-        matching predicate:NSPredicate, inStorageWithScope scope:StorageScope,
+        withType type:Record.Type?=nil, matching predicate:NSPredicate, inStorageWithScope scope:StorageScope,
         fetchDepth:Int, retrievalCompleted:((RecordOperationResult, [Record]?) -> Void)) {
         
-        self.retrieveRecords(matching: { predicate.evaluate(with: $0) }, inStorageWithScope: scope, fetchDepth: fetchDepth, retrievalCompleted: retrievalCompleted)
+        self.retrieveRecords(withType: type, matching: { predicate.evaluate(with: $0) }, inStorageWithScope: scope, fetchDepth: fetchDepth, retrievalCompleted: retrievalCompleted)
         
     }
     

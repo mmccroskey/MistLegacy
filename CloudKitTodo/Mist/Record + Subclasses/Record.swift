@@ -21,6 +21,17 @@ internal struct RelatedRecordData {
 class Record: Hashable {
     
     
+    // MARK: - Static Convenience Functions
+    
+    static func find(where filter:FilterClosure, within:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
+        Mist.localDataCoordinator.retrieveRecords(withType:self, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth, retrievalCompleted: finished)
+    }
+    
+    static func find(where predicate:NSPredicate, within:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
+        Mist.localDataCoordinator.retrieveRecords(withType:self, matching: predicate, inStorageWithScope: within, fetchDepth:fetchDepth, retrievalCompleted: finished)
+    }
+    
+    
     // MARK: - Initializer
     
     internal init(backingRemoteRecord:CKRecord?=nil) {
@@ -92,7 +103,7 @@ class Record: Hashable {
     
     // MARK: - Private Properties
     
-    private var typeString: String {
+    internal var typeString: String {
         
         let mirror = Mirror(reflecting: self)
         let selfType = mirror.subjectType as! Record.Type

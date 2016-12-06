@@ -14,6 +14,7 @@ typealias StorageScope = CKDatabaseScope
 typealias RecordIdentifier = String
 typealias RecordValue = CKRecordValue
 typealias RelationshipDeleteBehavior = CKReferenceAction
+typealias FilterClosure = ((Record) throws -> Bool)
 
 
 struct Configuration {
@@ -60,12 +61,12 @@ class Mist {
         self.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth, retrievalCompleted: finished)
     }
     
-    static func find(where filter:((Record) throws -> Bool), within:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
-        self.localDataCoordinator.retrieveRecords(matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth, retrievalCompleted: finished)
+    static func find(recordsOfType type:Record.Type, where filter:FilterClosure, within:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
+        self.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth, retrievalCompleted: finished)
     }
     
-    static func find(where predicate:NSPredicate, within:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
-        self.localDataCoordinator.retrieveRecords(matching: predicate, inStorageWithScope: within, fetchDepth:fetchDepth, retrievalCompleted: finished)
+    static func find(recordsOfType type:Record.Type, where predicate:NSPredicate, within:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
+        self.localDataCoordinator.retrieveRecords(withType:type, matching: predicate, inStorageWithScope: within, fetchDepth:fetchDepth, retrievalCompleted: finished)
     }
     
     
