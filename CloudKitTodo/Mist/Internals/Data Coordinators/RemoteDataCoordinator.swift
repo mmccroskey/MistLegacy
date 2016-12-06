@@ -447,36 +447,58 @@ internal class RemoteDataCoordinator : DataCoordinator {
                         matching: { recordIdentifiersForDeletedRecords.contains($0.identifier) }, inStorageWithScope: scope, fetchDepth: -1,
                         retrievalCompleted: { (fetchOperationResult, records) in
                             
-                            var recordIds: [RecordIdentifier] = []
-                            var recordsSet: Set<Record> = []
+                            var recordIdsOfRecordsToRemove: [RecordIdentifier] = []
+                            var recordsSetOfRecordsToRemove: Set<Record> = []
                             if let records = records {
-                                recordIds = records.map({ $0.identifier })
-                                recordsSet = Set(records)
+                                recordIdsOfRecordsToRemove = records.map({ $0.identifier })
+                                recordsSetOfRecordsToRemove = Set(records)
                             }
                             
                             guard fetchOperationResult.succeeded == true else {
                                 
                                 let errors = errorsArray(from: fetchOperationResult.error)
-                                completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIds))
+                                completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIdsOfRecordsToRemove))
                                 
                                 return
                                 
                             }
                             
-                            Mist.localDataCoordinator.removeRecords(recordsSet, fromStorageWith: scope, finished: { (removeOperationResult) in
-                                
-                                let recordIds = recordsSet.map({ $0.identifier })
+                            Mist.localDataCoordinator.removeRecords(recordsSetOfRecordsToRemove, fromStorageWith: scope, finished: { (removeOperationResult) in
                                 
                                 guard removeOperationResult.succeeded == true else {
                                     
                                     let errors = errorsArray(from: removeOperationResult.error)
-                                    completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIds))
+                                    completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIdsOfRecordsToRemove))
                                     
                                     return
                                     
                                 }
                                 
-                                completed(ZonedSyncSummary(result: .success, errors:[], idsOfRelevantRecords: recordIds))
+                                var mistRecords: Set<Record> = []
+                                
+                                for changedCKRecord in changedRecords.records {
+                                    
+                                    let newMistRecord = Record(backingRemoteRecord: changedCKRecord)
+                                    mistRecords.insert(newMistRecord)
+                                    
+                                }
+                                
+                                Mist.localDataCoordinator.addRecords(mistRecords, toStorageWith: scope, finished: { (addOperationResult) in
+                                    
+                                    let changedRecordsIds = changedRecords.recordIDs().map({ $0.recordName })
+                                    
+                                    guard addOperationResult.succeeded == true else {
+                                        
+                                        let errors = errorsArray(from: removeOperationResult.error)
+                                        completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: changedRecordsIds))
+                                        
+                                        return
+                                        
+                                    }
+                                    
+                                    completed(ZonedSyncSummary(result: .success, errors: [], idsOfRelevantRecords: changedRecordsIds))
+                                    
+                                })
                                 
                             })
                             
