@@ -294,21 +294,33 @@ internal class RemoteDataCoordinator : DataCoordinator {
             fatalError("Formatting of content from confirmUserAuthenticated doesn't match expectations.")
         }
         
-        let publicDatabase = self.container.publicCloudDatabase
-        publicDatabase.fetch(withRecordID: recordId, completionHandler: { (record, error) in
+        Mist.localDataCoordinator.retrieveRecord(matching: recordId.recordName, fromStorageWithScope: .public, fetchDepth: 0) { (operationResult, userRecord) in
             
-            guard error == nil, let record = record else {
-                completion(SyncStepResult(success: false, error: error!))
+            guard userRecord != nil else {
+                
+                let publicDatabase = self.container.publicCloudDatabase
+                publicDatabase.fetch(withRecordID: recordId, completionHandler: { (record, error) in
+                    
+                    guard error == nil, let record = record else {
+                        completion(SyncStepResult(success: false, error: error!))
+                        return
+                    }
+                    
+                    // TODO: Handle case where User has changed
+                    let user = Record(backingRemoteRecord: record)
+                    Mist.add(user, to: .public)
+                    
+                    completion(SyncStepResult(success: true))
+                    
+                })
+                
                 return
+                
             }
-            
-            // TODO: Handle case where User has changed
-            let user = Record(backingRemoteRecord: record)
-            Mist.add(user, to: .public)
             
             completion(SyncStepResult(success: true))
             
-        })
+        }
         
     }
     
