@@ -54,6 +54,12 @@ class Mist {
     static var localCachedRecordChangesStorage: LocalCachedRecordChangesStorage = InMemoryStorage()
     
     
+    // MARK: - Public Properties
+    
+    // TODO: Implement code to keep this up to date
+    static var currentUser: CloudKitUser? = nil
+    
+    
     // MARK: - Fetching Items
     
     static func get(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, Record?) -> Void)) {

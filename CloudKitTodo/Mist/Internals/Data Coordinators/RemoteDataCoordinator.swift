@@ -670,7 +670,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
             
         default:
             
-            guard let currentUserIdentifier = self.currentUser?.identifier else {
+            guard let currentUserIdentifier = Mist.currentUser?.identifier else {
                 
                 let noCurrentUserError = ErrorStruct(
                     code: 401, title: "User Not Authenticated",

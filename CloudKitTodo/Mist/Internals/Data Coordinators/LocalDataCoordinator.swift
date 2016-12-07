@@ -197,7 +197,7 @@ internal class LocalDataCoordinator : DataCoordinator {
                 
             } else {
                 
-                guard let currentUserIdentifier = self.currentUser?.identifier else {
+                guard let currentUserIdentifier = Mist.currentUser?.identifier else {
                     
                     let noCurrentUserError = ErrorStruct(
                         code: 401, title: "User Not Authenticated",
@@ -296,7 +296,7 @@ internal class LocalDataCoordinator : DataCoordinator {
                     
                 } else {
                     
-                    guard let currentUserIdentifier = self.currentUser?.identifier else {
+                    guard let currentUserIdentifier = Mist.currentUser?.identifier else {
                         
                         let noCurrentUserError = ErrorStruct(
                             code: 401, title: "User Not Authenticated",
@@ -411,7 +411,7 @@ internal class LocalDataCoordinator : DataCoordinator {
         
         if scope == .private || scope == .shared {
             
-            guard self.currentUser != nil else {
+            guard Mist.currentUser != nil else {
                 
                 let noCurrentUserError = ErrorStruct(
                     code: 401, title: "User Not Authenticated",
@@ -447,7 +447,7 @@ internal class LocalDataCoordinator : DataCoordinator {
                     
                     if scope == .private && record.recordZone == nil {
                         
-                        guard let currentUser = self.currentUser else {
+                        guard let currentUser = Mist.currentUser else {
                             fatalError("We're trying to create a zone with the current User as the User, but no current User exists.")
                         }
                         
@@ -532,7 +532,7 @@ internal class LocalDataCoordinator : DataCoordinator {
                         
                     } else {
                         
-                        let currentUserIdentifier = self.currentUser!.identifier
+                        let currentUserIdentifier = Mist.currentUser!.identifier
                         
                         self.setCachedRetrievedRecord(record, identifiedBy: record.identifier, inScope: scope, forUser: currentUserIdentifier)
                         Mist.localRecordStorage.addUserRecord(record, identifiedBy: currentUserIdentifier, toScope: scope)
@@ -553,7 +553,7 @@ internal class LocalDataCoordinator : DataCoordinator {
                         
                     } else {
                         
-                        let currentUserIdentifier = self.currentUser!.identifier
+                        let currentUserIdentifier = Mist.currentUser!.identifier
                         
                         self.setCachedRetrievedRecord(nil, identifiedBy: record.identifier, inScope: scope, forUser: currentUserIdentifier)
                         Mist.localRecordStorage.removeUserRecord(matching: record.identifier, identifiedBy: currentUserIdentifier, fromScope: scope)
