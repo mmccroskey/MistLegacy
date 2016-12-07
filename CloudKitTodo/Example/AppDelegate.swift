@@ -35,6 +35,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        
+        let todo = Todo()
+        
+        todo.title = "Take out the garbage"
+        todo.dueDate = Date(timeIntervalSinceNow: 300) // 5 minutes from now
+        
+        Mist.add(todo, to: .public)
+        Mist.sync(QualityOfService.userInitiated) { (summary) in
+            
+            print("Here's the summary of the sync: \(summary)")
+            
+        }
+        
+        
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
