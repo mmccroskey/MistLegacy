@@ -12,5 +12,18 @@ class Todo: Record {
     
     init() { super.init(className: "Todo") }
     
+    var title: String? {
+        
+        get { return self.propertyValue(forKey: "title") as? String }
+        set { self.setPropertyValue(newValue as? RecordValue, forKey: "title") }
+        
+    }
+    
+    var dueDate: Date? {
+        
+        get { return self.propertyValue(forKey: "dueDate") as? Date }
+        set { self.setPropertyValue(newValue as? RecordValue, forKey: "dueDate") }
+        
+    }
     
 }
