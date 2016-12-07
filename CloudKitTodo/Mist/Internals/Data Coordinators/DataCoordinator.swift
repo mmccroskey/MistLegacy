@@ -19,7 +19,7 @@ internal class DataCoordinator {
     private var typeString: String {
         
         let mirror = Mirror(reflecting: self)
-        let selfType = mirror.subjectType as! Record.Type
+        let selfType = mirror.subjectType as! DataCoordinator.Type
         let typeString = String(describing: selfType)
         
         return typeString
