@@ -11,6 +11,6 @@ import CloudKit
 
 class CloudKitUser : Record {
     
-    
+    init() { super.init(className: "CloudKitUser") }
     
 }

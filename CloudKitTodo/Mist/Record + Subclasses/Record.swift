@@ -35,22 +35,27 @@ class Record: Hashable {
     
     // MARK: - Initializer
     
-    internal init(backingRemoteRecord:CKRecord?=nil) {
+    init(className: String?=nil, backingRemoteRecord:CKRecord?=nil) {
         
-        let typeString = String(describing: Record.type())
-        
-        if let backingRemoteRecord = backingRemoteRecord {
+        if let className = className {
             
-            self.identifier = backingRemoteRecord.recordID.recordName
-            
-            self.backingRemoteRecord = backingRemoteRecord
-            
-        } else {
-            
+            self.className = className
             self.identifier = UUID().uuidString as RecordIdentifier
             
             let recordID = CKRecordID(recordName: self.identifier)
-            self.backingRemoteRecord = CKRecord(recordType: typeString, recordID: recordID)
+            self.backingRemoteRecord = CKRecord(recordType: self.className, recordID: recordID)
+            
+            
+        } else if let backingRemoteRecord = backingRemoteRecord {
+            
+            self.backingRemoteRecord = backingRemoteRecord
+            
+            self.className = self.backingRemoteRecord.recordType
+            self.identifier = self.backingRemoteRecord.recordID.recordName
+            
+        } else {
+            
+            fatalError()
             
         }
         
@@ -91,6 +96,8 @@ class Record: Hashable {
     
     
     // MARK: - Protected Properties
+    
+    internal let className: String
     
     internal var scope: CKDatabaseScope?
     internal var recordZone: CKRecordZone?
@@ -225,10 +232,6 @@ class Record: Hashable {
     
     
     // MARK: - Internal Functions
-    
-    internal static func type() -> Record.Type {
-        return self
-    }
     
     internal static func ensureDatabasesAndRecordZonesMatch(between providingRecord:Record, and dependentRecord:Record) {
         

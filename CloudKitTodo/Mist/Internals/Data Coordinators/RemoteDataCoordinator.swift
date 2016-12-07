@@ -297,13 +297,13 @@ internal class RemoteDataCoordinator : DataCoordinator {
         let publicDatabase = self.container.publicCloudDatabase
         publicDatabase.fetch(withRecordID: recordId, completionHandler: { (record, error) in
             
-            guard error == nil else {
+            guard error == nil, let record = record else {
                 completion(SyncStepResult(success: false, error: error!))
                 return
             }
             
             // TODO: Handle case where User has changed
-            let user = CloudKitUser(backingRemoteRecord: record)
+            let user = Record(backingRemoteRecord: record)
             Mist.add(user, to: .public)
             
             completion(SyncStepResult(success: true))

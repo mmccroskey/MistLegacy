@@ -10,6 +10,7 @@ import Foundation
 
 class Todo: Record {
     
+    init() { super.init(className: "Todo") }
     
     
 }
