@@ -296,7 +296,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
         
         Mist.localDataCoordinator.retrieveRecord(matching: recordId.recordName, fromStorageWithScope: .public, fetchDepth: 0) { (operationResult, userRecord) in
             
-            guard userRecord != nil else {
+            guard let userRecord = userRecord as? CloudKitUser else {
                 
                 let publicDatabase = self.container.publicCloudDatabase
                 publicDatabase.fetch(withRecordID: recordId, completionHandler: { (record, error) in
@@ -307,9 +307,10 @@ internal class RemoteDataCoordinator : DataCoordinator {
                     }
                     
                     // TODO: Handle case where User has changed
-                    let user = Record(backingRemoteRecord: record)
+                    let user = CloudKitUser(backingRemoteRecord: record)
                     Mist.add(user, to: .public)
                     
+                    Mist.currentUser = user
                     completion(SyncStepResult(success: true))
                     
                 })
@@ -318,6 +319,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                 
             }
             
+            Mist.currentUser = userRecord
             completion(SyncStepResult(success: true))
             
         }
