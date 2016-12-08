@@ -12,5 +12,6 @@ import CloudKit
 class CloudKitUser : Record {
     
     init() { super.init(className: "CloudKitUser") }
+    init(backingRemoteRecord: CKRecord) { super.init(backingRemoteRecord: backingRemoteRecord) }
     
 }
