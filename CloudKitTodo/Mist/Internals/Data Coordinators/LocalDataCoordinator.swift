@@ -409,6 +409,16 @@ internal class LocalDataCoordinator : DataCoordinator {
     
     private func performChange(ofType changeType:RecordChangeType, on records:Set<Record>, within scope:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
+        guard records.count > 0 else {
+            
+            if let finished = finished {
+                finished(RecordOperationResult(succeeded: true, error: nil))
+            }
+            
+            return
+            
+        }
+        
         if scope == .private || scope == .shared {
             
             guard Mist.currentUser != nil else {
@@ -431,7 +441,7 @@ internal class LocalDataCoordinator : DataCoordinator {
         
         var recordOperationResult: RecordOperationResult?
         
-        Mist.localRecordsQueue.addOperation {
+        let execution = {
             
             for record in records {
                 
@@ -530,6 +540,8 @@ internal class LocalDataCoordinator : DataCoordinator {
                         
                         Mist.localCachedRecordChangesStorage.publicModifiedRecordsAwaitingPushToCloud.insert(record)
                         
+                        
+                        
                     } else {
                         
                         let currentUserIdentifier = Mist.currentUser!.identifier
@@ -567,7 +579,25 @@ internal class LocalDataCoordinator : DataCoordinator {
                 
             }
             
+            if recordOperationResult == nil {
+                recordOperationResult = RecordOperationResult(succeeded: true, error: nil)
+            }
+            
         }
+        
+        let completion = {
+            
+            guard let recordOperationResult = recordOperationResult else {
+                fatalError("recordOperationResult should have been set to a value in the execution block above.")
+            }
+            
+            if let finished = finished {
+                finished(recordOperationResult)
+            }
+            
+        }
+        
+        Mist.localRecordsQueue.addOperation(withExecutionBlock: execution, completionBlock: completion)
         
     }
     
