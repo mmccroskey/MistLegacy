@@ -331,7 +331,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
     
     func performPublicDatabasePull(_ completed:((DirectionalSyncSummary) -> Void)) {
         
-        guard let descriptors = Mist.config.public.pullRecordsMatchingDescriptors else {
+        guard let descriptors = Mist.config.public.pullsRecordsMatchingDescriptors else {
             completed(DirectionalSyncSummary(result: .success))
             return
         }
