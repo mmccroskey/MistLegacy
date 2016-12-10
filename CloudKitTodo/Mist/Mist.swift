@@ -20,7 +20,6 @@ struct Configuration {
     
     var `public`: Scoped
     var `private`: Scoped
-    var shared: Scoped
     
     struct Scoped {
         
@@ -44,9 +43,8 @@ class Mist {
     // MARK: - Configuration Properties
     
     static var config: Configuration = Configuration(
-        public: Configuration.Scoped(pullRecordsMatchingDescriptors: nil),
-        private: Configuration.Scoped(pullRecordsMatchingDescriptors: nil),
-        shared: Configuration.Scoped(pullRecordsMatchingDescriptors: nil)
+        public: Configuration.Scoped(pullsRecordsMatchingDescriptors: nil),
+        private: Configuration.Scoped(pullsRecordsMatchingDescriptors: nil)
     )
     
     static var localRecordStorage: LocalRecordStorage = InMemoryStorage()

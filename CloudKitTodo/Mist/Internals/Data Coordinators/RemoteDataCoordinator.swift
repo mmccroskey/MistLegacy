@@ -336,13 +336,44 @@ internal class RemoteDataCoordinator : DataCoordinator {
             return
         }
         
+        var collatedDescriptors: [String : [RecordDescriptor]] = [:]
+        for descriptor in descriptors {
+            
+            let recordTypeString = String(describing: descriptor.type)
+            
+            var descriptorsForType: [RecordDescriptor]
+            if let extantDescriptorsForType = collatedDescriptors[recordTypeString] {
+                descriptorsForType = extantDescriptorsForType
+            } else {
+                descriptorsForType = []
+            }
+            
+            descriptorsForType.append(descriptor)
+            
+            collatedDescriptors[recordTypeString] = descriptorsForType
+            
+        }
+        
+        var queriesToPerform: [CKQuery] = []
+        for collatedDescriptor in collatedDescriptors {
+            
+            let predicatesArray = collatedDescriptor.value.map({ $0.descriptor })
+            let combinedPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: predicatesArray)
+            
+            let query = CKQuery(recordType: collatedDescriptor.key, predicate: combinedPredicate)
+            queriesToPerform.append(query)
+            
+        }
+        
+        var mistRecords: Set<Record> = []
+        
         for descriptor in descriptors {
             
             let recordTypeString = String(describing: descriptor.type)
             let query = CKQuery(recordType: recordTypeString, predicate: descriptor.descriptor)
             
-            var queryCursor: CKQueryCursor? = nil
             var fetchedRecords: Set<CKRecord> = []
+            var queryCursor: CKQueryCursor? = nil
             
             func performQuery() {
                 
@@ -375,32 +406,34 @@ internal class RemoteDataCoordinator : DataCoordinator {
                             
                         }
                         
-                        Mist.localDataCoordinator.addRecords(mistRecords, toStorageWith: .public, finished: { (storageOperationResult) in
-                            
-                            guard storageOperationResult.succeeded == true else {
-                                
-                                if let error = storageOperationResult.error {
-                                    completed(DirectionalSyncSummary(result: .partialFailure, error: error))
-                                } else {
-                                    completed(DirectionalSyncSummary(result: .partialFailure))
-                                }
-                                
-                                return
-                                
-                            }
-                            
-                            let recordIdentifiers = fetchedRecords.map({ $0.recordID.recordName })
-                            completed(DirectionalSyncSummary(result: .success, idsOfRecordsChanged: recordIdentifiers, idsOfRecordsDeleted: []))
-                            
-                        })
-                        
                     }
                     
                 }
                 
             }
             
+            performQuery()
+            
         }
+        
+//        Mist.localDataCoordinator.addRecords(mistRecords, toStorageWith: .public, finished: { (storageOperationResult) in
+//            
+//            guard storageOperationResult.succeeded == true else {
+//                
+//                if let error = storageOperationResult.error {
+//                    completed(DirectionalSyncSummary(result: .partialFailure, error: error))
+//                } else {
+//                    completed(DirectionalSyncSummary(result: .partialFailure))
+//                }
+//                
+//                return
+//                
+//            }
+//            
+//            let recordIdentifiers = fetchedRecords.map({ $0.recordID.recordName })
+//            completed(DirectionalSyncSummary(result: .success, idsOfRecordsChanged: recordIdentifiers, idsOfRecordsDeleted: []))
+//            
+//        })
         
     }
     
@@ -440,28 +473,31 @@ internal class RemoteDataCoordinator : DataCoordinator {
                     
                 }
                 
-                if let records = records {
+                guard let records = records else {
                     
-                    let recordsSet = Set(records)
-                    
-                    Mist.localDataCoordinator.removeRecords(recordsSet, fromStorageWith: scope, finished: { (removeOperationResult) in
-                        
-                        let recordIds = recordsSet.map({ $0.identifier })
-                        
-                        guard removeOperationResult.succeeded == true else {
-                            
-                            let errors = errorsArray(from: removeOperationResult.error)
-                            completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIds))
-                            
-                            return
-                            
-                        }
-                        
-                        completed(ZonedSyncSummary(result: .success, errors:[], idsOfRelevantRecords: recordIds))
-                        
-                    })
+                    completed(ZonedSyncSummary(result: .success, errors:[], idsOfRelevantRecords: []))
+                    return
                     
                 }
+                    
+                let recordsSet = Set(records)
+                
+                Mist.localDataCoordinator.removeRecords(recordsSet, fromStorageWith: scope, finished: { (removeOperationResult) in
+                    
+                    let recordIds = recordsSet.map({ $0.identifier })
+                    
+                    guard removeOperationResult.succeeded == true else {
+                        
+                        let errors = errorsArray(from: removeOperationResult.error)
+                        completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIds))
+                        
+                        return
+                        
+                    }
+                    
+                    completed(ZonedSyncSummary(result: .success, errors:[], idsOfRelevantRecords: recordIds))
+                    
+                })
                 
             }
             
@@ -487,7 +523,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                  }
                  */
                 
-                let changesOperation = CKFetchRecordZoneChangesOperation(recordZoneIDs: Array(idsOfZonesToFetch), optionsByRecordZoneID: optionsByRecordZoneId)
+                let changesOperation = CKFetchRecordZoneChangesOperation(recordZoneIDs: Array(idsOfZonesToFetch), optionsByRecordZoneID: nil)
                 
                 let changedRecords: CKRecordSet = CKRecordSet()
                 var idsOfDeletedRecords: Set<CKRecordID> = []
@@ -610,37 +646,111 @@ internal class RemoteDataCoordinator : DataCoordinator {
                     self.setDatabaseServerChangeToken(newToken, forScope: scope)
                 }
                 
-                deleteInvalidatedZones(forZonesWithIds: idsOfZonesToDelete, completed: { (zonedDeletionSummary) in
+                var zonedChangesSummary: ZonedSyncSummary? = nil
+                var zonedDeletionsSummary: ZonedSyncSummary? = nil
+                
+                func callCompletionWithAppropriateContent() {
                     
-                    guard zonedDeletionSummary.result == .success else {
+                    if zonedDeletionsSummary == nil && zonedChangesSummary == nil {
                         
                         completed(ZoneBasedDirectionalSyncSummary(
-                            result: .totalFailure, errors: zonedDeletionSummary.errors, zoneChangeSummary: nil, zoneDeletionSummary: zonedDeletionSummary
+                            result: .success, errors: [],
+                            zoneChangeSummary: nil, zoneDeletionSummary: nil
                         ))
                         
-                        return
+                    } else if zonedDeletionsSummary != nil && zonedChangesSummary == nil {
                         
-                    }
-                    
-                    fetchZoneChanges(forZonesWithIds: idsOfZonesToFetch, completed: { (zonedChangesSummary) in
+                        let extantZonedDeletionsSummary = zonedDeletionsSummary!
                         
-                        guard zonedChangesSummary.result == .success else {
+                        completed(ZoneBasedDirectionalSyncSummary(
+                            result: extantZonedDeletionsSummary.result, errors: extantZonedDeletionsSummary.errors,
+                            zoneChangeSummary: nil, zoneDeletionSummary: extantZonedDeletionsSummary
+                        ))
+                        
+                    } else if zonedDeletionsSummary == nil && zonedChangesSummary != nil {
+                        
+                        let extantZonedChangesSummary = zonedChangesSummary!
+                        
+                        completed(ZoneBasedDirectionalSyncSummary(
+                            result: extantZonedChangesSummary.result, errors: extantZonedChangesSummary.errors,
+                            zoneChangeSummary: extantZonedChangesSummary, zoneDeletionSummary: nil
+                        ))
+                        
+                    } else {
+                        
+                        // They're both non-nil
+                        
+                        let extantZonedDeletionsSummary = zonedDeletionsSummary!
+                        let extantZonedChangesSummary = zonedChangesSummary!
+                        
+                        let result: SyncResult
+                        let errors: [Error]
+                        
+                        if extantZonedDeletionsSummary.result == .success && extantZonedChangesSummary.result == .success {
                             
-                            completed(ZoneBasedDirectionalSyncSummary(
-                                result: .totalFailure, errors: zonedChangesSummary.errors, zoneChangeSummary: zonedChangesSummary, zoneDeletionSummary: zonedDeletionSummary
-                            ))
+                            result = .success
+                            errors = []
                             
-                            return
+                        } else if extantZonedDeletionsSummary.result == .totalFailure && extantZonedChangesSummary.result == .totalFailure {
+                            
+                            result = .totalFailure
+                            errors = extantZonedDeletionsSummary.errors + extantZonedChangesSummary.errors
+                            
+                        } else {
+                            
+                            result = .partialFailure
+                            errors = extantZonedDeletionsSummary.errors + extantZonedChangesSummary.errors
                             
                         }
                         
                         completed(ZoneBasedDirectionalSyncSummary(
-                            result: .success, errors: [], zoneChangeSummary: zonedChangesSummary, zoneDeletionSummary: zonedDeletionSummary
+                            result: result, errors: errors,
+                            zoneChangeSummary: extantZonedChangesSummary, zoneDeletionSummary: extantZonedDeletionsSummary
                         ))
                         
-                    })
+                    }
                     
-                })
+                }
+                
+                let fetchZoneChangesCompletion: ((ZonedSyncSummary) -> Void) = { (actualZonedChangesSummary) in
+                    
+                    zonedChangesSummary = actualZonedChangesSummary
+                    
+                    callCompletionWithAppropriateContent()
+                    
+                }
+                
+                let deleteInvalidatedZonesCompletion: ((ZonedSyncSummary) -> Void) = { (actualZonedDeletionsSummary) in
+                    
+                    zonedDeletionsSummary = actualZonedDeletionsSummary
+                    
+                    if idsOfZonesToFetch.count > 0 {
+                        
+                        fetchZoneChanges(forZonesWithIds: idsOfZonesToFetch, completed: fetchZoneChangesCompletion)
+                        
+                    } else {
+                        
+                        callCompletionWithAppropriateContent()
+                        
+                    }
+                    
+                }
+                
+                if idsOfZonesToDelete.count > 0 {
+                    
+                    deleteInvalidatedZones(forZonesWithIds: idsOfZonesToDelete, completed: deleteInvalidatedZonesCompletion)
+                    
+                } else if idsOfZonesToFetch.count > 0 {
+                    
+                    fetchZoneChanges(forZonesWithIds: idsOfZonesToFetch, completed: fetchZoneChangesCompletion)
+                    
+                } else {
+                    
+                    // They're both nil
+                    
+                    callCompletionWithAppropriateContent()
+                    
+                }
                 
             }
             
