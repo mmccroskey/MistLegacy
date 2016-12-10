@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		8D171BEB1DEF109A00EA1597 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D171BEA1DEF109A00EA1597 /* CloudKit.framework */; };
+		8D382B6F1DFB91FC00337C5E /* UserCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D382B6E1DFB91FC00337C5E /* UserCache.swift */; };
 		8D865A351DF62E2600A46879 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A1A1DF62E2600A46879 /* AppDelegate.swift */; };
 		8D865A361DF62E2600A46879 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8D865A1B1DF62E2600A46879 /* Assets.xcassets */; };
 		8D865A371DF62E2600A46879 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8D865A1C1DF62E2600A46879 /* LaunchScreen.storyboard */; };
@@ -33,6 +34,7 @@
 /* Begin PBXFileReference section */
 		8D171BD31DEF0FD400EA1597 /* CloudKitTodo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CloudKitTodo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D171BEA1DEF109A00EA1597 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
+		8D382B6E1DFB91FC00337C5E /* UserCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserCache.swift; sourceTree = "<group>"; };
 		8D865A1A1DF62E2600A46879 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8D865A1B1DF62E2600A46879 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8D865A1D1DF62E2600A46879 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -103,6 +105,14 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		8D382B6D1DFB91FC00337C5E /* Caching */ = {
+			isa = PBXGroup;
+			children = (
+				8D382B6E1DFB91FC00337C5E /* UserCache.swift */,
+			);
+			path = Caching;
+			sourceTree = "<group>";
+		};
 		8D865A191DF62E2600A46879 /* Example */ = {
 			isa = PBXGroup;
 			children = (
@@ -154,6 +164,7 @@
 			children = (
 				8D865A4E1DF62E6B00A46879 /* Queue.swift */,
 				8D865A4F1DF62E6B00A46879 /* SynchronizationCoordinator.swift */,
+				8D382B6D1DFB91FC00337C5E /* Caching */,
 				8D865A4A1DF62E6B00A46879 /* Data Coordinators */,
 			);
 			path = Internals;
@@ -265,6 +276,7 @@
 				8D865A3B1DF62E2600A46879 /* Todo.swift in Sources */,
 				8D865A441DF62E2600A46879 /* LocalCachedRecordChangesStorage.swift in Sources */,
 				8D865A3C1DF62E2600A46879 /* ViewController.swift in Sources */,
+				8D382B6F1DFB91FC00337C5E /* UserCache.swift in Sources */,
 				8D865A511DF62E6B00A46879 /* LocalDataCoordinator.swift in Sources */,
 				8D865A3A1DF62E2600A46879 /* InMemoryStorage.swift in Sources */,
 			);
