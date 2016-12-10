@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		8D171BEB1DEF109A00EA1597 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D171BEA1DEF109A00EA1597 /* CloudKit.framework */; };
 		8D382B6F1DFB91FC00337C5E /* UserCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D382B6E1DFB91FC00337C5E /* UserCache.swift */; };
+		8D382B731DFB930000337C5E /* ScopedCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D382B721DFB930000337C5E /* ScopedCache.swift */; };
+		8D382B751DFB975600337C5E /* LocalCacheCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D382B741DFB975600337C5E /* LocalCacheCoordinator.swift */; };
+		8D382B771DFBA91800337C5E /* PublicCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D382B761DFBA91800337C5E /* PublicCache.swift */; };
+		8D382B791DFCC80500337C5E /* NonPublicCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D382B781DFCC80500337C5E /* NonPublicCache.swift */; };
 		8D865A351DF62E2600A46879 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A1A1DF62E2600A46879 /* AppDelegate.swift */; };
 		8D865A361DF62E2600A46879 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8D865A1B1DF62E2600A46879 /* Assets.xcassets */; };
 		8D865A371DF62E2600A46879 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8D865A1C1DF62E2600A46879 /* LaunchScreen.storyboard */; };
@@ -35,6 +39,10 @@
 		8D171BD31DEF0FD400EA1597 /* CloudKitTodo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CloudKitTodo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D171BEA1DEF109A00EA1597 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		8D382B6E1DFB91FC00337C5E /* UserCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserCache.swift; sourceTree = "<group>"; };
+		8D382B721DFB930000337C5E /* ScopedCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScopedCache.swift; sourceTree = "<group>"; };
+		8D382B741DFB975600337C5E /* LocalCacheCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalCacheCoordinator.swift; sourceTree = "<group>"; };
+		8D382B761DFBA91800337C5E /* PublicCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PublicCache.swift; sourceTree = "<group>"; };
+		8D382B781DFCC80500337C5E /* NonPublicCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NonPublicCache.swift; sourceTree = "<group>"; };
 		8D865A1A1DF62E2600A46879 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8D865A1B1DF62E2600A46879 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8D865A1D1DF62E2600A46879 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -108,6 +116,10 @@
 		8D382B6D1DFB91FC00337C5E /* Caching */ = {
 			isa = PBXGroup;
 			children = (
+				8D382B741DFB975600337C5E /* LocalCacheCoordinator.swift */,
+				8D382B781DFCC80500337C5E /* NonPublicCache.swift */,
+				8D382B761DFBA91800337C5E /* PublicCache.swift */,
+				8D382B721DFB930000337C5E /* ScopedCache.swift */,
 				8D382B6E1DFB91FC00337C5E /* UserCache.swift */,
 			);
 			path = Caching;
@@ -263,6 +275,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8D382B751DFB975600337C5E /* LocalCacheCoordinator.swift in Sources */,
 				8D865A501DF62E6B00A46879 /* DataCoordinator.swift in Sources */,
 				8D865A421DF62E2600A46879 /* CloudKitUser.swift in Sources */,
 				8D865A521DF62E6B00A46879 /* RemoteDataCoordinator.swift in Sources */,
@@ -271,6 +284,7 @@
 				8D865A451DF62E2600A46879 /* LocalMetadataStorage.swift in Sources */,
 				8D865A351DF62E2600A46879 /* AppDelegate.swift in Sources */,
 				8D865A461DF62E2600A46879 /* LocalRecordStorage.swift in Sources */,
+				8D382B771DFBA91800337C5E /* PublicCache.swift in Sources */,
 				8D865A431DF62E2600A46879 /* Record.swift in Sources */,
 				8D865A541DF62E6B00A46879 /* SynchronizationCoordinator.swift in Sources */,
 				8D865A3B1DF62E2600A46879 /* Todo.swift in Sources */,
@@ -278,6 +292,8 @@
 				8D865A3C1DF62E2600A46879 /* ViewController.swift in Sources */,
 				8D382B6F1DFB91FC00337C5E /* UserCache.swift in Sources */,
 				8D865A511DF62E6B00A46879 /* LocalDataCoordinator.swift in Sources */,
+				8D382B791DFCC80500337C5E /* NonPublicCache.swift in Sources */,
+				8D382B731DFB930000337C5E /* ScopedCache.swift in Sources */,
 				8D865A3A1DF62E2600A46879 /* InMemoryStorage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

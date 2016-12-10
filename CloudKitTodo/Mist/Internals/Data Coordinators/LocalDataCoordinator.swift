@@ -14,6 +14,23 @@ internal class LocalDataCoordinator : DataCoordinator {
     
     // MARK: - Private Properties
     
+    private let localCacheCoordinator = LocalCacheCoordinator()
+    private var currentUserCache: UserCache {
+        
+        guard let currentUser = Mist.currentUser else {
+            
+            fatalError(
+                "We should never be calling currentUserCache when currentUser is nil, " +
+                    "because all calls to this function should occur after guards for the  " +
+                "existence of currentUser."
+            )
+            
+        }
+        
+        return self.localCacheCoordinator.userCache(associatedWith: currentUser.identifier)
+        
+    }
+    
     private var publicRetrievedRecordsCache: [RecordIdentifier : Record] = [:]
     private var userRetrievedRecordsCache: [RecordIdentifier : [StorageScope : [RecordIdentifier : Record]]] = [:]
     
@@ -182,46 +199,7 @@ internal class LocalDataCoordinator : DataCoordinator {
         
         let execution = {
             
-            if scope == .public {
-                
-                if let cachedRecord = self.cachedRetrievedIdRecordPairs(inScope: .public)[identifier] {
-                    
-                    record = cachedRecord
-                    
-                } else {
-                    
-                    record = Mist.localRecordStorage.publicRecord(matching: identifier)
-                    self.setCachedRetrievedRecord(record, identifiedBy: identifier, inScope: .public)
-                    
-                }
-                
-            } else {
-                
-                guard let currentUserIdentifier = Mist.currentUser?.identifier else {
-                    
-                    let noCurrentUserError = ErrorStruct(
-                        code: 401, title: "User Not Authenticated",
-                        failureReason: "The user is not currently logged in to iCloud. The user must be logged in in order for us to save data to the private or shared scopes.",
-                        description: "Get the user to log in and try this request again."
-                    )
-                    
-                    result = RecordOperationResult(succeeded: false, error: noCurrentUserError.errorObject())
-                    return
-                    
-                }
-                
-                if let cachedRecord = self.cachedRetrievedIdRecordPairs(inScope: scope, forUser: currentUserIdentifier)[identifier] {
-                    
-                    record = cachedRecord
-                    
-                } else {
-                    
-                    record = Mist.localRecordStorage.userRecord(matching: identifier, identifiedBy: currentUserIdentifier, inScope: scope)
-                    self.setCachedRetrievedRecord(record, identifiedBy: identifier, inScope: scope, forUser: currentUserIdentifier)
-                    
-                }
-                
-            }
+            record = self.currentUserCache.scopedCaches[scope]!.typedCaches[.generic]!.records[identifier]
             
             self.associateRelatedRecords(for: record, in: scope, using: fetchDepth, finished: { (operationResult) in
                 result = operationResult
