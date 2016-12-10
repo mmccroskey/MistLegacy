@@ -23,7 +23,7 @@ struct Configuration {
     
     struct Scoped {
         
-        var pullRecordsMatchingDescriptors: [RecordDescriptor]?
+        var pullsRecordsMatchingDescriptors: [RecordDescriptor]?
         
     }
     
