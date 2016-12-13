@@ -60,14 +60,18 @@ class Mist {
     
     static func get(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, Record?) -> Void)) {
         
-        guard self.currentUser != nil else {
+        self.checkCurrentUserStatus { (userExists) in
             
-            finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
-            return
+            guard userExists else {
+                
+                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
+                return
+                
+            }
+            
+            self.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth, retrievalCompleted: finished)
             
         }
-        
-        self.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth, retrievalCompleted: finished)
         
     }
     
@@ -76,14 +80,18 @@ class Mist {
         sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
     ) {
         
-        guard self.currentUser != nil else {
+        self.checkCurrentUserStatus { (userExists) in
             
-            finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
-            return
+            guard userExists else {
+                
+                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
+                return
+                
+            }
+            
+            self.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth, retrievalCompleted: finished)
             
         }
-        
-        self.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth, retrievalCompleted: finished)
         
     }
     
@@ -92,14 +100,18 @@ class Mist {
         sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
     ) {
         
-        guard self.currentUser != nil else {
+        self.checkCurrentUserStatus { (userExists) in
             
-            finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
-            return
+            guard userExists else {
+                
+                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
+                return
+                
+            }
+            
+            self.localDataCoordinator.retrieveRecords(withType:type, matching: predicate, inStorageWithScope: within, fetchDepth:fetchDepth, retrievalCompleted: finished)
             
         }
-        
-        self.localDataCoordinator.retrieveRecords(withType:type, matching: predicate, inStorageWithScope: within, fetchDepth:fetchDepth, retrievalCompleted: finished)
         
     }
     
@@ -108,65 +120,81 @@ class Mist {
     
     static func add(_ record:Record, to:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        guard self.currentUser != nil else {
+        self.checkCurrentUserStatus { (userExists) in
             
-            if let finished = finished {
-                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+            guard userExists else {
+                
+                if let finished = finished {
+                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+                }
+                
+                return
+                
             }
             
-            return
+            self.localDataCoordinator.addRecord(record, toStorageWith: to, finished: finished)
             
         }
-        
-        self.localDataCoordinator.addRecord(record, toStorageWith: to, finished: finished)
         
     }
     
     static func add(_ records:Set<Record>, to:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        guard self.currentUser != nil else {
+        self.checkCurrentUserStatus { (userExists) in
             
-            if let finished = finished {
-                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+            guard userExists else {
+                
+                if let finished = finished {
+                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+                }
+                
+                return
+                
             }
             
-            return
+            self.localDataCoordinator.addRecords(records, toStorageWith: to, finished: finished)
             
         }
-        
-        self.localDataCoordinator.addRecords(records, toStorageWith: to, finished: finished)
         
     }
     
     static func remove(_ record:Record, from:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        guard self.currentUser != nil else {
+        self.checkCurrentUserStatus { (userExists) in
             
-            if let finished = finished {
-                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+            guard userExists else {
+                
+                if let finished = finished {
+                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+                }
+                
+                return
+                
             }
             
-            return
+            self.localDataCoordinator.removeRecord(record, fromStorageWith: from, finished: finished)
             
         }
-        
-        self.localDataCoordinator.removeRecord(record, fromStorageWith: from, finished: finished)
         
     }
     
     static func remove(_ records:Set<Record>, from:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        guard self.currentUser != nil else {
+        self.checkCurrentUserStatus { (userExists) in
             
-            if let finished = finished {
-                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+            guard userExists else {
+                
+                if let finished = finished {
+                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+                }
+                
+                return
+                
             }
             
-            return
+            self.localDataCoordinator.removeRecords(records, fromStorageWith: from, finished: finished)
             
         }
-        
-        self.localDataCoordinator.removeRecords(records, fromStorageWith: from, finished: finished)
         
     }
     
@@ -175,18 +203,22 @@ class Mist {
     
     static func sync(_ qOS:QualityOfService?=QualityOfService.default, finished:((SyncSummary) -> Void)?=nil) {
         
-        // TODO: Guard sync against having no user
-//        guard self.currentUser != nil else {
-//            
-//            if let finished = finished {
-//                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
-//            }
-//            
-//            return
-//            
-//        }
-        
-        self.synchronizationCoordinator.sync(qOS, finished: finished)
+        self.checkCurrentUserStatus { (userExists) in
+            
+            guard userExists else {
+                
+                // TODO: Call callback with failure
+//                if let finished = finished {
+//                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+//                }
+                
+                return
+                
+            }
+            
+            self.synchronizationCoordinator.sync(qOS, finished: finished)
+            
+        }
         
     }
     
@@ -206,6 +238,30 @@ class Mist {
         failureReason: "The user is not currently logged in to iCloud. The user must be logged in in order for us to save data to the private or shared scopes.",
         description: "Get the user to log in and try this request again."
     )
+    
+    
+    // MARK: - Private Functions
+    
+    private static func checkCurrentUserStatus(completion:((Bool) -> Void)) {
+        
+        if self.currentUser != nil {
+            
+            completion(true)
+            
+        } else {
+            
+            let remote = self.remoteDataCoordinator
+            remote.confirmICloudAvailable { (result) in
+                remote.confirmUserAuthenticated(result, completion: { (result) in
+                    remote.confirmUserRecordExists(result, completion: { (result) in
+                        completion(result.success)
+                    })
+                })
+            }
+            
+        }
+        
+    }
     
 }
 
