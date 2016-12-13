@@ -26,4 +26,24 @@ class UserCache {
     let privateCache = NonPublicCache()
     let sharedCache = NonPublicCache()
     
+    
+    // MARK: - Functions
+    
+    func scopedCache(withScope scope:StorageScope) -> ScopedCache {
+        
+        switch scope {
+            
+        case .public:
+            return self.publicCache
+            
+        case .private:
+            return self.privateCache
+            
+        case .shared:
+            return self.sharedCache
+            
+        }
+        
+    }
+    
 }
