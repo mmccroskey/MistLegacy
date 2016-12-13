@@ -14,23 +14,6 @@ internal class LocalDataCoordinator : DataCoordinator {
     
     // MARK: - Private Properties
     
-    private let localCacheCoordinator = LocalCacheCoordinator()
-    private var currentUserCache: UserCache {
-        
-        guard let currentUser = Mist.currentUser else {
-            
-            fatalError(
-                "We should never be calling currentUserCache when currentUser is nil, " +
-                    "because all calls to this function should occur after guards for the  " +
-                "existence of currentUser."
-            )
-            
-        }
-        
-        return self.localCacheCoordinator.userCache(associatedWith: currentUser.identifier)
-        
-    }
-    
     private enum RecordChangeType {
         case addition
         case removal

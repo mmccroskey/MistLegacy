@@ -11,6 +11,26 @@ import Foundation
 internal class DataCoordinator {
     
     
+    // MARK: - Internal Properties
+    
+    internal let localCacheCoordinator = LocalCacheCoordinator()
+    internal var currentUserCache: UserCache {
+        
+        guard let currentUser = Mist.currentUser else {
+            
+            fatalError(
+                "We should never be calling currentUserCache when currentUser is nil, " +
+                    "because all calls to this function should occur after guards for the  " +
+                "existence of currentUser."
+            )
+            
+        }
+        
+        return self.localCacheCoordinator.userCache(associatedWith: currentUser.identifier)
+        
+    }
+    
+    
     // MARK: - Private Properties
     
     private var typeString: String {
