@@ -88,6 +88,17 @@ internal class LocalDataCoordinator : DataCoordinator {
         
     }
     
+    func userRecordExists(withIdentifier identifier:RecordIdentifier, finished:((Record?) -> Void)) {
+        
+        let cacheForUserRecord = self.localCacheCoordinator.userCache(associatedWith: identifier)
+        
+        if let userRecord = cacheForUserRecord.publicCache.cachedRecords[identifier] {
+            finished(userRecord)
+        } else {
+            finished(nil)
+        }
+        
+    }
     
     func retrieveRecord(
         matching identifier:RecordIdentifier, fromStorageWithScope scope:StorageScope,
