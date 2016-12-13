@@ -31,78 +31,6 @@ internal class LocalDataCoordinator : DataCoordinator {
         
     }
     
-    private var publicRetrievedRecordsCache: [RecordIdentifier : Record] = [:]
-    private var userRetrievedRecordsCache: [RecordIdentifier : [StorageScope : [RecordIdentifier : Record]]] = [:]
-    
-    private func cachedRetrievedIdRecordPairs(inScope scope:StorageScope, forUser userRecordIdentifier:RecordIdentifier?=nil) -> [RecordIdentifier : Record] {
-        
-        if scope == .public {
-            
-            return self.publicRetrievedRecordsCache
-            
-        } else {
-            
-            guard let userRecordIdentifier = userRecordIdentifier else {
-                fatalError("User-scoped records can only be retrieved when a userRecordIdentifier is provided.")
-            }
-            
-            var recordsForProvidedUser: [StorageScope : [RecordIdentifier : Record]]
-            if let extantRecordsForProvidedUser = self.userRetrievedRecordsCache[userRecordIdentifier] {
-                recordsForProvidedUser = extantRecordsForProvidedUser
-            } else {
-                recordsForProvidedUser = [:]
-            }
-            
-            var recordsForProvidedUserWithProvidedScope: [RecordIdentifier : Record]
-            if let extantRecordsForProvidedUserWithProvidedScope = recordsForProvidedUser[scope] {
-                recordsForProvidedUserWithProvidedScope = extantRecordsForProvidedUserWithProvidedScope
-            } else {
-                recordsForProvidedUserWithProvidedScope = [:]
-            }
-            
-            recordsForProvidedUser[scope] = recordsForProvidedUserWithProvidedScope
-            self.userRetrievedRecordsCache[userRecordIdentifier] = recordsForProvidedUser
-            
-            return recordsForProvidedUserWithProvidedScope
-            
-        }
-        
-    }
-    
-    private func setCachedRetrievedRecord(_ record:Record?, identifiedBy identifier:RecordIdentifier, inScope scope:StorageScope, forUser userIdentifier:RecordIdentifier?=nil){
-        
-        if scope == .public {
-            
-            self.publicRetrievedRecordsCache[identifier] = record
-            
-        } else {
-            
-            guard let userIdentifier = userIdentifier else {
-                fatalError("User-scoped records can only be set when a userRecordIdentifier is provided.")
-            }
-            
-            var recordsForProvidedUser: [StorageScope : [RecordIdentifier : Record]]
-            if let extantRecordsForProvidedUser = self.userRetrievedRecordsCache[userIdentifier] {
-                recordsForProvidedUser = extantRecordsForProvidedUser
-            } else {
-                recordsForProvidedUser = [:]
-            }
-            
-            var recordsForProvidedUserWithProvidedScope: [RecordIdentifier : Record]
-            if let extantRecordsForProvidedUserWithProvidedScope = recordsForProvidedUser[scope] {
-                recordsForProvidedUserWithProvidedScope = extantRecordsForProvidedUserWithProvidedScope
-            } else {
-                recordsForProvidedUserWithProvidedScope = [:]
-            }
-            
-            recordsForProvidedUserWithProvidedScope[identifier] = record
-            recordsForProvidedUser[scope] = recordsForProvidedUserWithProvidedScope
-            self.userRetrievedRecordsCache[userIdentifier] = recordsForProvidedUser
-            
-        }
-        
-    }
-    
     private enum RecordChangeType {
         case addition
         case removal
@@ -110,35 +38,6 @@ internal class LocalDataCoordinator : DataCoordinator {
     
     
     // MARK: - Fetching Locally-Cached Items
-    
-//    private func scopedRecordsCacheForUser(identifiedBy userRecordIdentifier:RecordIdentifier, withScope scope:StorageScope) -> [RecordIdentifier : Record] {
-//        
-//        guard scope != .public else {
-//            fatalError("Public records are not associated with a User before being added to the local record cache.")
-//        }
-//        
-//        let potentialExistingStorageForUser: [StorageScope : [RecordIdentifier : Record]]? = self.userRetrievedRecordsCache[userRecordIdentifier]
-//        
-//        var storageForUser: [StorageScope : [RecordIdentifier : Record]]
-//        if let existingStorageForUser = potentialExistingStorageForUser {
-//            storageForUser = existingStorageForUser
-//        } else {
-//            storageForUser = [:]
-//        }
-//        self.userRetrievedRecordsCache[userRecordIdentifier] = storageForUser
-//        
-//        let potentialScopedStorageForUser: [RecordIdentifier : Record]? = self.userRetrievedRecordsCache[userRecordIdentifier]?[scope]
-//        
-//        var scopedStorageForUser: [RecordIdentifier : Record]
-//        if let existingScopedStorageForUser = potentialScopedStorageForUser {
-//            scopedStorageForUser = existingScopedStorageForUser
-//        } else {
-//            scopedStorageForUser = [:]
-//        }
-//        
-//        return scopedStorageForUser
-//        
-//    }
     
     private func associateRelatedRecords(for record:Record?, in scope:StorageScope, using fetchDepth:Int, finished:((RecordOperationResult) -> Void)) {
         
@@ -199,7 +98,7 @@ internal class LocalDataCoordinator : DataCoordinator {
         
         let execution = {
             
-            record = self.currentUserCache.scopedCaches[scope]!.typedCaches[.generic]!.records[identifier]
+            record = self.currentUserCache.scopedCache(withScope: scope).cachedRecords[identifier]
             
             self.associateRelatedRecords(for: record, in: scope, using: fetchDepth, finished: { (operationResult) in
                 result = operationResult
@@ -241,86 +140,16 @@ internal class LocalDataCoordinator : DataCoordinator {
             
             do {
                 
-                if scope == .public {
-                    
-                    let initialRecords = try self.cachedRetrievedIdRecordPairs(inScope: .public).values.filter(filter)
-                    
-                    let cachedRecords: [Record]
-                    if let typeFilter = typeFilter {
-                        cachedRecords = try initialRecords.filter(typeFilter)
-                    } else {
-                        cachedRecords = initialRecords
-                    }
-                    
-                    if cachedRecords.count > 0 {
-                        
-                        records = cachedRecords
-                        
-                    } else {
-                        
-                        let initialRecords = try Mist.localRecordStorage.publicRecords(matching: filter)
-                        
-                        if let typeFilter = typeFilter {
-                            records = try initialRecords.filter(typeFilter)
-                        } else {
-                            records = initialRecords
-                        }
-                        
-                        for record in records {
-                            self.setCachedRetrievedRecord(record, identifiedBy: record.identifier, inScope: .public)
-                        }
-                        
-                    }
-                    
+                let initialRecords = try self.currentUserCache.scopedCache(withScope: scope).cachedRecords.values.filter(filter)
+                
+                let typeFilteredRecords: [Record]
+                if let typeFilter = typeFilter {
+                    typeFilteredRecords = try initialRecords.filter(typeFilter)
                 } else {
-                    
-                    guard let currentUserIdentifier = Mist.currentUser?.identifier else {
-                        
-                        let noCurrentUserError = ErrorStruct(
-                            code: 401, title: "User Not Authenticated",
-                            failureReason: "The user is not currently logged in to iCloud. The user must be logged in in order for us to save data to the private or shared scopes.",
-                            description: "Get the user to log in and try this request again."
-                        )
-                        
-                        success = false
-                        error = noCurrentUserError.errorObject()
-                        
-                        return
-                        
-                    }
-                    
-                    
-                    let userScopedRecordsCache = self.cachedRetrievedIdRecordPairs(inScope: scope, forUser: currentUserIdentifier)
-                    let initialRecords = try userScopedRecordsCache.values.filter(filter)
-                    
-                    let cachedRecords: [Record]
-                    if let typeFilter = typeFilter {
-                        cachedRecords = try initialRecords.filter(typeFilter)
-                    } else {
-                        cachedRecords = initialRecords
-                    }
-                    
-                    if cachedRecords.count > 0 {
-                        
-                        records = cachedRecords
-                        
-                    } else {
-                        
-                        let initialRecords = try Mist.localRecordStorage.userRecords(matching: filter, identifiedBy: currentUserIdentifier, inScope: scope)
-                        
-                        if let typeFilter = typeFilter {
-                            records = try initialRecords.filter(typeFilter)
-                        } else {
-                            records = initialRecords
-                        }
-                        
-                        for record in records {
-                            self.setCachedRetrievedRecord(record, identifiedBy: record.identifier, inScope: scope, forUser: currentUserIdentifier)
-                        }
-                        
-                    }
-                    
+                    typeFilteredRecords = initialRecords
                 }
+                
+                records = typeFilteredRecords
                 
                 for record in records {
                     
@@ -394,26 +223,6 @@ internal class LocalDataCoordinator : DataCoordinator {
             }
             
             return
-            
-        }
-        
-        if scope == .private || scope == .shared {
-            
-            guard Mist.currentUser != nil else {
-                
-                let noCurrentUserError = ErrorStruct(
-                    code: 401, title: "User Not Authenticated",
-                    failureReason: "The user is not currently logged in to iCloud. The user must be logged in in order for us to save data to the private or shared scopes.",
-                    description: "Get the user to log in and try this request again."
-                )
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: false, error: noCurrentUserError.errorObject()))
-                }
-                
-                return
-                
-            }
             
         }
         
@@ -511,47 +320,15 @@ internal class LocalDataCoordinator : DataCoordinator {
                         
                     }
                     
-                    if scope == .public {
-                        
-                        self.setCachedRetrievedRecord(record, identifiedBy: record.identifier, inScope: .public)
-                        Mist.localRecordStorage.addPublicRecord(record)
-                        
-                        Mist.localCachedRecordChangesStorage.publicModifiedRecordsAwaitingPushToCloud.insert(record)
-                        
-                        
-                        
-                    } else {
-                        
-                        let currentUserIdentifier = Mist.currentUser!.identifier
-                        
-                        self.setCachedRetrievedRecord(record, identifiedBy: record.identifier, inScope: scope, forUser: currentUserIdentifier)
-                        Mist.localRecordStorage.addUserRecord(record, identifiedBy: currentUserIdentifier, toScope: scope)
-                        
-                        Mist.localCachedRecordChangesStorage.addUserModifiedRecordAwaitingPushToCloud(record, identifiedBy: currentUserIdentifier, toScope: scope)
-                        
-                    }
+                    self.currentUserCache.scopedCache(withScope: scope).cachedRecords[record.identifier] = record
+                    self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges[record.identifier] = record
                     
                 case .removal:
                     
-                    if scope == .public {
-                        
-                        self.setCachedRetrievedRecord(nil, identifiedBy: record.identifier, inScope: .public)
-                        Mist.localRecordStorage.removePublicRecord(record)
-                        
-                        Mist.localCachedRecordChangesStorage.publicDeletedRecordsAwaitingPushToCloud.insert(record)
-                        Mist.localCachedRecordChangesStorage.publicModifiedRecordsAwaitingPushToCloud.remove(record)
-                        
-                    } else {
-                        
-                        let currentUserIdentifier = Mist.currentUser!.identifier
-                        
-                        self.setCachedRetrievedRecord(nil, identifiedBy: record.identifier, inScope: scope, forUser: currentUserIdentifier)
-                        Mist.localRecordStorage.removeUserRecord(matching: record.identifier, identifiedBy: currentUserIdentifier, fromScope: scope)
-                        
-                        Mist.localCachedRecordChangesStorage.addUserDeletedRecordAwaitingPushToCloud(record, identifiedBy: currentUserIdentifier, toScope: scope)
-                        Mist.localCachedRecordChangesStorage.removeUserModifiedRecordAwaitingPushToCloud(record, identifiedBy: currentUserIdentifier, fromScope: scope)
-                        
-                    }
+                    self.currentUserCache.scopedCache(withScope: scope).cachedRecords.removeValue(forKey: record.identifier)
+                    self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges.removeValue(forKey: record.identifier)
+                    
+                    self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedDeletions[record.identifier] = record
                     
                 }
                 
