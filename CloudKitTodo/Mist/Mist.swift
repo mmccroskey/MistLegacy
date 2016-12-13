@@ -15,6 +15,7 @@ typealias RecordIdentifier = String
 typealias RecordZoneIdentifier = String
 typealias RelationshipDeleteBehavior = CKReferenceAction
 typealias FilterClosure = ((Record) throws -> Bool)
+typealias SortClosure = ((Record,Record) throws -> Bool)
 
 
 struct Configuration {
@@ -62,41 +63,135 @@ class Mist {
     // MARK: - Fetching Items
     
     static func get(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, Record?) -> Void)) {
+        
+        guard self.currentUser != nil else {
+            
+            finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
+            return
+            
+        }
+        
         self.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth, retrievalCompleted: finished)
+        
     }
     
-    static func find(recordsOfType type:Record.Type, where filter:FilterClosure, within:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
+    static func find(
+        recordsOfType type:Record.Type, where filter:FilterClosure, within:StorageScope,
+        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
+    ) {
+        
+        guard self.currentUser != nil else {
+            
+            finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
+            return
+            
+        }
+        
         self.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth, retrievalCompleted: finished)
+        
     }
     
-    static func find(recordsOfType type:Record.Type, where predicate:NSPredicate, within:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
+    static func find(
+        recordsOfType type:Record.Type, where predicate:NSPredicate, within:StorageScope,
+        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
+    ) {
+        
+        guard self.currentUser != nil else {
+            
+            finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
+            return
+            
+        }
+        
         self.localDataCoordinator.retrieveRecords(withType:type, matching: predicate, inStorageWithScope: within, fetchDepth:fetchDepth, retrievalCompleted: finished)
+        
     }
     
     
     // MARK: - Modifying Items
     
     static func add(_ record:Record, to:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
+        
+        guard self.currentUser != nil else {
+            
+            if let finished = finished {
+                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+            }
+            
+            return
+            
+        }
+        
         self.localDataCoordinator.addRecord(record, toStorageWith: to, finished: finished)
+        
     }
     
     static func add(_ records:Set<Record>, to:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
+        
+        guard self.currentUser != nil else {
+            
+            if let finished = finished {
+                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+            }
+            
+            return
+            
+        }
+        
         self.localDataCoordinator.addRecords(records, toStorageWith: to, finished: finished)
+        
     }
     
     static func remove(_ record:Record, from:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
+        
+        guard self.currentUser != nil else {
+            
+            if let finished = finished {
+                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+            }
+            
+            return
+            
+        }
+        
         self.localDataCoordinator.removeRecord(record, fromStorageWith: from, finished: finished)
+        
     }
     
     static func remove(_ records:Set<Record>, from:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
+        
+        guard self.currentUser != nil else {
+            
+            if let finished = finished {
+                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+            }
+            
+            return
+            
+        }
+        
         self.localDataCoordinator.removeRecords(records, fromStorageWith: from, finished: finished)
+        
     }
     
     
     // MARK: - Syncing Items
     
     static func sync(_ qOS:QualityOfService?=QualityOfService.default, finished:((SyncSummary) -> Void)?=nil) {
+        
+        // TODO: Guard sync against having no user
+//        guard self.currentUser != nil else {
+//            
+//            if let finished = finished {
+//                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+//            }
+//            
+//            return
+//            
+//        }
+        
         self.synchronizationCoordinator.sync(qOS, finished: finished)
+        
     }
     
     
@@ -109,6 +204,12 @@ class Mist {
     internal static let localDataCoordinator = LocalDataCoordinator()
     internal static let remoteDataCoordinator = RemoteDataCoordinator()
     internal static let synchronizationCoordinator = SynchronizationCoordinator()
+    
+    internal static let noCurrentUserError = ErrorStruct(
+        code: 401, title: "User Not Authenticated",
+        failureReason: "The user is not currently logged in to iCloud. The user must be logged in in order for us to save data to the private or shared scopes.",
+        description: "Get the user to log in and try this request again."
+    )
     
 }
 
