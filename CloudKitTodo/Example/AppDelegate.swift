@@ -41,13 +41,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         todo.title = "Take out the garbage"
         todo.dueDate = Date(timeIntervalSinceNow: 300) // 5 minutes from now
         
-        Mist.add(todo, to: .public)
-        Mist.sync(QualityOfService.userInitiated) { (summary) in
+        Mist.add(todo, to: .public) { (result) in
             
-            print("Here's the summary of the sync: \(summary)")
+            guard result.succeeded == true else {
+                fatalError("Local add failed: \(result.error)")
+            }
+            
+            Mist.sync(QualityOfService.userInitiated) { (summary) in
+                
+                print("Here's the summary of the sync: \(summary)")
+                
+            }
             
         }
-        
         
     }
 
