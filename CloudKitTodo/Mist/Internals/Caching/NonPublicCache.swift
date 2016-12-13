@@ -12,6 +12,6 @@ import CloudKit
 class NonPublicCache: ScopedCache {
     
     var scopeChangeToken: CKServerChangeToken? = nil
-    var recordZoneChangeTokens: [RecordZoneIdentifier : CKServerChangeToken] = [:]
+    var recordZoneChangeTokens: [RecordZoneIdentifier : CKServerChangeToken?] = [:]
     
 }
