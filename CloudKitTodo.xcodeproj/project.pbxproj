@@ -18,15 +18,11 @@
 		8D865A371DF62E2600A46879 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8D865A1C1DF62E2600A46879 /* LaunchScreen.storyboard */; };
 		8D865A381DF62E2600A46879 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8D865A1E1DF62E2600A46879 /* Main.storyboard */; };
 		8D865A391DF62E2600A46879 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 8D865A211DF62E2600A46879 /* Info.plist */; };
-		8D865A3A1DF62E2600A46879 /* InMemoryStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A221DF62E2600A46879 /* InMemoryStorage.swift */; };
 		8D865A3B1DF62E2600A46879 /* Todo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A231DF62E2600A46879 /* Todo.swift */; };
 		8D865A3C1DF62E2600A46879 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A241DF62E2600A46879 /* ViewController.swift */; };
 		8D865A401DF62E2600A46879 /* Mist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A2A1DF62E2600A46879 /* Mist.swift */; };
 		8D865A421DF62E2600A46879 /* CloudKitUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A2D1DF62E2600A46879 /* CloudKitUser.swift */; };
 		8D865A431DF62E2600A46879 /* Record.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A2E1DF62E2600A46879 /* Record.swift */; };
-		8D865A441DF62E2600A46879 /* LocalCachedRecordChangesStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A301DF62E2600A46879 /* LocalCachedRecordChangesStorage.swift */; };
-		8D865A451DF62E2600A46879 /* LocalMetadataStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A311DF62E2600A46879 /* LocalMetadataStorage.swift */; };
-		8D865A461DF62E2600A46879 /* LocalRecordStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A321DF62E2600A46879 /* LocalRecordStorage.swift */; };
 		8D865A501DF62E6B00A46879 /* DataCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A4B1DF62E6B00A46879 /* DataCoordinator.swift */; };
 		8D865A511DF62E6B00A46879 /* LocalDataCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A4C1DF62E6B00A46879 /* LocalDataCoordinator.swift */; };
 		8D865A521DF62E6B00A46879 /* RemoteDataCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D865A4D1DF62E6B00A46879 /* RemoteDataCoordinator.swift */; };
@@ -49,15 +45,11 @@
 		8D865A1F1DF62E2600A46879 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		8D865A201DF62E2600A46879 /* CloudKitTodo.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = CloudKitTodo.entitlements; sourceTree = "<group>"; };
 		8D865A211DF62E2600A46879 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		8D865A221DF62E2600A46879 /* InMemoryStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InMemoryStorage.swift; sourceTree = "<group>"; };
 		8D865A231DF62E2600A46879 /* Todo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Todo.swift; sourceTree = "<group>"; };
 		8D865A241DF62E2600A46879 /* ViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		8D865A2A1DF62E2600A46879 /* Mist.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mist.swift; sourceTree = "<group>"; };
 		8D865A2D1DF62E2600A46879 /* CloudKitUser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CloudKitUser.swift; sourceTree = "<group>"; };
 		8D865A2E1DF62E2600A46879 /* Record.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Record.swift; sourceTree = "<group>"; };
-		8D865A301DF62E2600A46879 /* LocalCachedRecordChangesStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalCachedRecordChangesStorage.swift; sourceTree = "<group>"; };
-		8D865A311DF62E2600A46879 /* LocalMetadataStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalMetadataStorage.swift; sourceTree = "<group>"; };
-		8D865A321DF62E2600A46879 /* LocalRecordStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalRecordStorage.swift; sourceTree = "<group>"; };
 		8D865A4B1DF62E6B00A46879 /* DataCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataCoordinator.swift; sourceTree = "<group>"; };
 		8D865A4C1DF62E6B00A46879 /* LocalDataCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalDataCoordinator.swift; sourceTree = "<group>"; };
 		8D865A4D1DF62E6B00A46879 /* RemoteDataCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RemoteDataCoordinator.swift; sourceTree = "<group>"; };
@@ -134,7 +126,6 @@
 				8D865A1E1DF62E2600A46879 /* Main.storyboard */,
 				8D865A201DF62E2600A46879 /* CloudKitTodo.entitlements */,
 				8D865A211DF62E2600A46879 /* Info.plist */,
-				8D865A221DF62E2600A46879 /* InMemoryStorage.swift */,
 				8D865A231DF62E2600A46879 /* Todo.swift */,
 				8D865A241DF62E2600A46879 /* ViewController.swift */,
 			);
@@ -147,7 +138,6 @@
 				8D865A2A1DF62E2600A46879 /* Mist.swift */,
 				8D865A491DF62E6B00A46879 /* Internals */,
 				8D865A2C1DF62E2600A46879 /* Record + Subclasses */,
-				8D865A2F1DF62E2600A46879 /* Storage Protocols */,
 			);
 			path = Mist;
 			sourceTree = "<group>";
@@ -159,16 +149,6 @@
 				8D865A2E1DF62E2600A46879 /* Record.swift */,
 			);
 			path = "Record + Subclasses";
-			sourceTree = "<group>";
-		};
-		8D865A2F1DF62E2600A46879 /* Storage Protocols */ = {
-			isa = PBXGroup;
-			children = (
-				8D865A301DF62E2600A46879 /* LocalCachedRecordChangesStorage.swift */,
-				8D865A311DF62E2600A46879 /* LocalMetadataStorage.swift */,
-				8D865A321DF62E2600A46879 /* LocalRecordStorage.swift */,
-			);
-			path = "Storage Protocols";
 			sourceTree = "<group>";
 		};
 		8D865A491DF62E6B00A46879 /* Internals */ = {
@@ -281,20 +261,16 @@
 				8D865A521DF62E6B00A46879 /* RemoteDataCoordinator.swift in Sources */,
 				8D865A401DF62E2600A46879 /* Mist.swift in Sources */,
 				8D865A531DF62E6B00A46879 /* Queue.swift in Sources */,
-				8D865A451DF62E2600A46879 /* LocalMetadataStorage.swift in Sources */,
 				8D865A351DF62E2600A46879 /* AppDelegate.swift in Sources */,
-				8D865A461DF62E2600A46879 /* LocalRecordStorage.swift in Sources */,
 				8D382B771DFBA91800337C5E /* PublicCache.swift in Sources */,
 				8D865A431DF62E2600A46879 /* Record.swift in Sources */,
 				8D865A541DF62E6B00A46879 /* SynchronizationCoordinator.swift in Sources */,
 				8D865A3B1DF62E2600A46879 /* Todo.swift in Sources */,
-				8D865A441DF62E2600A46879 /* LocalCachedRecordChangesStorage.swift in Sources */,
 				8D865A3C1DF62E2600A46879 /* ViewController.swift in Sources */,
 				8D382B6F1DFB91FC00337C5E /* UserCache.swift in Sources */,
 				8D865A511DF62E6B00A46879 /* LocalDataCoordinator.swift in Sources */,
 				8D382B791DFCC80500337C5E /* NonPublicCache.swift in Sources */,
 				8D382B731DFB930000337C5E /* ScopedCache.swift in Sources */,
-				8D865A3A1DF62E2600A46879 /* InMemoryStorage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

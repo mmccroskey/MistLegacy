@@ -43,42 +43,4 @@ internal class DataCoordinator {
         
     }
     
-    
-    // MARK: - Public Functions
-    
-    func metadata(forKey key:String, retrievalCompleted:((Any?) -> Void)) {
-        
-        var metadata: Any?
-        
-        let execution = {
-            
-            if let selfMetadata = Mist.localMetadataStorage.value(forKey: self.typeString) as? [String : Any?] {
-                metadata = selfMetadata[key]
-            }
-            
-            metadata = nil
-            
-        }
-        
-        let completion = { retrievalCompleted(metadata) }
-        
-        Mist.localMetadataQueue.addOperation(withExecutionBlock: execution, completionBlock: completion)
-        
-    }
-    
-    func setMetadata(_ metadata:Any?, forKey key:String) {
-        
-        Mist.localMetadataQueue.addOperation  {
-            
-            if var selfMetadata = Mist.localMetadataStorage.value(forKey: self.typeString) as? [String : Any?] {
-                
-                selfMetadata[key] = metadata
-                Mist.localMetadataStorage.setValue(selfMetadata, forKey: self.typeString)
-                
-            }
-            
-        }
-        
-    }
-    
 }

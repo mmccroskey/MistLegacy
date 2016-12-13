@@ -49,10 +49,6 @@ class Mist {
         private: Configuration.Scoped(pullsRecordsMatchingDescriptors: nil)
     )
     
-    static var localRecordStorage: LocalRecordStorage = InMemoryStorage()
-    static var localMetadataStorage: LocalMetadataStorage = InMemoryStorage()
-    static var localCachedRecordChangesStorage: LocalCachedRecordChangesStorage = InMemoryStorage()
-    
     
     // MARK: - Public Properties
     

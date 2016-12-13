@@ -97,48 +97,25 @@ internal class RemoteDataCoordinator : DataCoordinator {
     
     private func databaseServerChangeToken(forScope scope:CKDatabaseScope, retrievalCompleted:((CKServerChangeToken?) -> Void)) {
         
-        if let key = self.databaseServerChangeTokenKey(forScope: scope) {
-            
-            self.metadata(forKey: key, retrievalCompleted: { (value) in
-                
-                if let existingChangeToken = value as? CKServerChangeToken {
-                    retrievalCompleted(existingChangeToken)
-                } else {
-                    retrievalCompleted(nil)
-                }
-                
-            })
-            
+        guard let scopedCache = self.currentUserCache.scopedCache(withScope: scope) as? NonPublicCache else {
+            fatalError("Only non-public caches support the storage of server change tokens.")
+        }
+        
+        if let extantChangeToken = scopedCache.scopeChangeToken {
+            retrievalCompleted(extantChangeToken)
+        } else {
+            retrievalCompleted(nil)
         }
         
     }
     
     private func setDatabaseServerChangeToken(_ changeToken:CKServerChangeToken?, forScope scope:CKDatabaseScope) {
         
-        if let key = self.databaseServerChangeTokenKey(forScope: scope) {
-            self.setMetadata(changeToken, forKey: key)
+        guard let scopedCache = self.currentUserCache.scopedCache(withScope: scope) as? NonPublicCache else {
+            fatalError("Only non-public caches support the storage of server change tokens.")
         }
         
-    }
-    
-    private func databaseServerChangeTokenKey(forScope scope:CKDatabaseScope) -> String? {
-        
-        let key: String?
-        
-        switch scope {
-            
-        case .private:
-            key = "privateDatabaseServerChangeToken"
-            
-        case .shared:
-            key = "sharedDatabaseServerChangeToken"
-            
-        default:
-            key = nil
-            
-        }
-        
-        return key
+        scopedCache.scopeChangeToken = changeToken
         
     }
     
@@ -149,48 +126,21 @@ internal class RemoteDataCoordinator : DataCoordinator {
     
     private func recordZonesServerChangeTokens(forScope scope:CKDatabaseScope, retrievalCompleted:(([RecordZoneIdentifier : CKServerChangeToken?]) -> Void)) {
         
-        if let key = self.recordZonesServerChangeTokensKey(forScope: scope) {
-            
-            self.metadata(forKey: key, retrievalCompleted: { (value) in
-                
-                if let existingChangeTokens = value as? [RecordZoneIdentifier : CKServerChangeToken?] {
-                    retrievalCompleted(existingChangeTokens)
-                } else {
-                    retrievalCompleted([:])
-                }
-                
-            })
-            
+        guard let scopedCache = self.currentUserCache.scopedCache(withScope: scope) as? NonPublicCache else {
+            fatalError("Only non-public caches support the storage of server change tokens.")
         }
+        
+        retrievalCompleted(scopedCache.recordZoneChangeTokens)
         
     }
     
     private func setRecordZonesServerChangeTokens(_ changeTokens:[RecordZoneIdentifier : CKServerChangeToken?], forScope scope:CKDatabaseScope) {
         
-        if let key = self.recordZonesServerChangeTokensKey(forScope: scope) {
-            self.setMetadata(changeTokens, forKey: key)
+        guard let scopedCache = self.currentUserCache.scopedCache(withScope: scope) as? NonPublicCache else {
+            fatalError("Only non-public caches support the storage of server change tokens.")
         }
         
-    }
-    
-    private func recordZonesServerChangeTokensKey(forScope scope:CKDatabaseScope) -> String? {
-        
-        let key: String?
-        
-        switch scope {
-            
-        case .private:
-            key = "privateRecordZonesServerChangeToken"
-            
-        case .shared:
-            key = "sharedRecordZonesServerChangeToken"
-            
-        default:
-            key = nil
-            
-        }
-        
-        return key
+        scopedCache.recordZoneChangeTokens = changeTokens
         
     }
     
@@ -771,38 +721,11 @@ internal class RemoteDataCoordinator : DataCoordinator {
     
     func performDatabasePush(for scope:CKDatabaseScope, completed:((DirectionalSyncSummary) -> Void)) {
         
-        let unpushedChanges: Set<Record>
-        let unpushedDeletions: Set<Record>
+        let unpushedChanges = self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges.values
+        let unpushedDeletions = self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedDeletions.values
         
-        switch scope {
-            
-        case .public:
-            unpushedChanges = Mist.localCachedRecordChangesStorage.publicModifiedRecordsAwaitingPushToCloud
-            unpushedDeletions = Mist.localCachedRecordChangesStorage.publicDeletedRecordsAwaitingPushToCloud
-            
-        default:
-            
-            guard let currentUserIdentifier = Mist.currentUser?.identifier else {
-                
-                let noCurrentUserError = ErrorStruct(
-                    code: 401, title: "User Not Authenticated",
-                    failureReason: "The user is not currently logged in to iCloud. The user must be logged in in order for us to save data to the private or shared scopes.",
-                    description: "Get the user to log in and try this request again."
-                )
-                
-                completed(DirectionalSyncSummary(result: .totalFailure, error: noCurrentUserError.errorObject()))
-                
-                return
-                
-            }
-            
-            unpushedChanges = Mist.localCachedRecordChangesStorage.userModifiedRecordsAwaitingPushToCloud(identifiedBy: currentUserIdentifier, inScope: scope)
-            unpushedDeletions = Mist.localCachedRecordChangesStorage.userDeletedRecordsAwaitingPushToCloud(identifiedBy: currentUserIdentifier, inScope: scope)
-            
-        }
-        
-        let unpushedChangesCKRecords = unpushedChanges.map({ $0.backingRemoteRecord })
-        let unpushedDeletionsCKRecordIDs = unpushedDeletions.map({ CKRecordID(recordName: $0.identifier) })
+        let unpushedChangesCKRecords = unpushedChanges.map({ $0.backingRemoteRecord }) as [CKRecord]
+        let unpushedDeletionsCKRecordIDs = unpushedDeletions.map({ CKRecordID(recordName: $0.identifier) }) as [CKRecordID]
         
         
         let modifyOperation = CKModifyRecordsOperation(recordsToSave: unpushedChangesCKRecords, recordIDsToDelete: unpushedDeletionsCKRecordIDs)
