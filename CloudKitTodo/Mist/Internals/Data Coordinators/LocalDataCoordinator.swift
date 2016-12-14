@@ -49,7 +49,7 @@ internal class LocalDataCoordinator : DataCoordinator {
         
     }
     
-    func userRecordExists(withIdentifier identifier:RecordIdentifier) -> Record? {
+    internal func userRecordExists(withIdentifier identifier:RecordIdentifier) -> Record? {
         
         let cacheForUserRecord = self.localCacheCoordinator.userCache(associatedWith: identifier)
         
@@ -58,6 +58,13 @@ internal class LocalDataCoordinator : DataCoordinator {
         } else {
             return nil
         }
+        
+    }
+    
+    internal func setCurrentUser(_ userRecord:CloudKitUser) {
+        
+        let userCache = self.localCacheCoordinator.userCache(associatedWith: userRecord.identifier)
+        userCache.publicCache.cachedRecords[userRecord.identifier] = userRecord
         
     }
     

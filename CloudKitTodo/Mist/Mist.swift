@@ -299,7 +299,9 @@ class Mist {
         
         Mist.cacheInteractionQueue.addOperation {
             
-            self.localDataCoordinator.addRecord(userRecord, toStorageWith: .public)
+            self.localDataCoordinator.setCurrentUser(userRecord)
+            self.currentUser = userRecord
+            
             finished(RecordOperationResult(succeeded: true, error: nil))
             
         }
