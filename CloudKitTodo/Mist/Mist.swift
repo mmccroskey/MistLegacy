@@ -53,7 +53,7 @@ class Mist {
     // MARK: - Public Properties
     
     // TODO: Implement code to keep this up to date
-    static var currentUser: CloudKitUser? = nil
+    static private(set) var currentUser: CloudKitUser? = nil
     
     
     // MARK: - Fetching Items
@@ -69,47 +69,62 @@ class Mist {
                 
             }
             
-            self.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth, retrievalCompleted: finished)
+            Mist.cacheInteractionQueue.addOperation {
+                
+                let record = self.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth)
+                finished(RecordOperationResult(succeeded: true, error: nil), record)
+                
+            }
             
         }
         
     }
     
     static func find(
-        recordsOfType type:Record.Type, where filter:FilterClosure, within:StorageScope,
-        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
+        recordsOfType type:Record.Type?=nil, where filter:FilterClosure, within:StorageScope,
+        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]) -> Void)
     ) {
         
         self.checkCurrentUserStatus { (userExists) in
             
             guard userExists else {
                 
-                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
+                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), [])
                 return
                 
             }
             
-            self.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth, retrievalCompleted: finished)
+            Mist.cacheInteractionQueue.addOperation {
+                
+                let records = self.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth)
+                finished(RecordOperationResult(succeeded: true, error: nil), records)
+                
+            }
             
         }
         
     }
     
     static func find(
-        recordsOfType type:Record.Type, where predicate:NSPredicate, within:StorageScope,
-        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
+        recordsOfType type:Record.Type?=nil, where predicate:NSPredicate, within:StorageScope,
+        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]) -> Void)
     ) {
         
         self.checkCurrentUserStatus { (userExists) in
             
             guard userExists else {
                 
-                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
+                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), [])
                 return
                 
             }
             
-            self.localDataCoordinator.retrieveRecords(withType:type, matching: predicate, inStorageWithScope: within, fetchDepth:fetchDepth, retrievalCompleted: finished)
+            Mist.cacheInteractionQueue.addOperation {
+                
+                let records = self.localDataCoordinator.retrieveRecords(withType: type, matching: predicate, inStorageWithScope: within, fetchDepth: fetchDepth)
+                finished(RecordOperationResult(succeeded: true, error: nil), records)
+                
+            }
             
         }
         
@@ -132,7 +147,15 @@ class Mist {
                 
             }
             
-            self.localDataCoordinator.addRecord(record, toStorageWith: to, finished: finished)
+            Mist.cacheInteractionQueue.addOperation {
+                
+                self.localDataCoordinator.addRecord(record, toStorageWith: to)
+                
+                if let finished = finished {
+                    finished(RecordOperationResult(succeeded: true, error: nil))
+                }
+                
+            }
             
         }
         
@@ -152,7 +175,15 @@ class Mist {
                 
             }
             
-            self.localDataCoordinator.addRecords(records, toStorageWith: to, finished: finished)
+            Mist.cacheInteractionQueue.addOperation {
+                
+                self.localDataCoordinator.addRecords(records, toStorageWith: to)
+                
+                if let finished = finished {
+                    finished(RecordOperationResult(succeeded: true, error: nil))
+                }
+                
+            }
             
         }
         
@@ -172,7 +203,15 @@ class Mist {
                 
             }
             
-            self.localDataCoordinator.removeRecord(record, fromStorageWith: from, finished: finished)
+            Mist.cacheInteractionQueue.addOperation {
+                
+                self.localDataCoordinator.removeRecord(record, fromStorageWith: from)
+                
+                if let finished = finished {
+                    finished(RecordOperationResult(succeeded: true, error: nil))
+                }
+                
+            }
             
         }
         
@@ -192,7 +231,15 @@ class Mist {
                 
             }
             
-            self.localDataCoordinator.removeRecords(records, fromStorageWith: from, finished: finished)
+            Mist.cacheInteractionQueue.addOperation {
+                
+                self.localDataCoordinator.removeRecords(records, fromStorageWith: from)
+                
+                if let finished = finished {
+                    finished(RecordOperationResult(succeeded: true, error: nil))
+                }
+                
+            }
             
         }
         
@@ -225,11 +272,6 @@ class Mist {
     
     // MARK: - Internal Properties
     
-    internal static let localRecordsQueue = Queue()
-    internal static let localMetadataQueue = Queue()
-    internal static let localCachedRecordChangesQueue = Queue()
-    
-    internal static let localDataCoordinator = LocalDataCoordinator()
     internal static let remoteDataCoordinator = RemoteDataCoordinator()
     internal static let synchronizationCoordinator = SynchronizationCoordinator()
     
@@ -238,6 +280,37 @@ class Mist {
         failureReason: "The user is not currently logged in to iCloud. The user must be logged in in order for us to save data to the private or shared scopes.",
         description: "Get the user to log in and try this request again."
     )
+    
+    
+    // MARK: - Internal Functions
+    
+    internal static func userRecordExists(withIdentifier identifier:RecordIdentifier, finished:((Record?) -> Void)) {
+        
+        Mist.cacheInteractionQueue.addOperation {
+            
+            let potentiallyExtantUserRecord = self.localDataCoordinator.userRecordExists(withIdentifier: identifier)
+            finished(potentiallyExtantUserRecord)
+            
+        }
+        
+    }
+    
+    internal static func setCurrentUser(_ userRecord:CloudKitUser, finished:((RecordOperationResult) -> Void)) {
+        
+        Mist.cacheInteractionQueue.addOperation {
+            
+            self.localDataCoordinator.addRecord(userRecord, toStorageWith: .public)
+            finished(RecordOperationResult(succeeded: true, error: nil))
+            
+        }
+        
+    }
+    
+    
+    // MARK: - Private Properties
+    
+    private static let cacheInteractionQueue = Queue()
+    private static let localDataCoordinator = LocalDataCoordinator()
     
     
     // MARK: - Private Functions

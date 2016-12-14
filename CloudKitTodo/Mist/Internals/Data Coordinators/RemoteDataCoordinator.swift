@@ -244,7 +244,21 @@ internal class RemoteDataCoordinator : DataCoordinator {
             fatalError("Formatting of content from confirmUserAuthenticated doesn't match expectations.")
         }
         
-        Mist.localDataCoordinator.userRecordExists(withIdentifier: recordId.recordName) { (userRecord) in
+        func refreshUserRecord(_ userRecord:CloudKitUser) {
+            
+            Mist.setCurrentUser(userRecord, finished: { (recordOperationResult) in
+                
+                guard recordOperationResult.succeeded == true else {
+                    fatalError("The only possible failure is due to having no user, which is ignored in this case, so this should never happen.")
+                }
+                
+                completion(SyncStepResult(success: true))
+                
+            })
+            
+        }
+        
+        Mist.userRecordExists(withIdentifier: recordId.recordName) { (userRecord) in
             
             guard let userRecord = userRecord as? CloudKitUser else {
                 
@@ -257,11 +271,9 @@ internal class RemoteDataCoordinator : DataCoordinator {
                     }
                     
                     // TODO: Handle case where User has changed
-                    let user = CloudKitUser(backingRemoteRecord: record)
-                    Mist.localDataCoordinator.addRecord(user, toStorageWith: .public)
+                    let userRecord = CloudKitUser(backingRemoteRecord: record)
+                    refreshUserRecord(userRecord)
                     
-                    Mist.currentUser = user
-                    completion(SyncStepResult(success: true))
                     
                 })
                 
@@ -269,8 +281,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                 
             }
             
-            Mist.currentUser = userRecord
-            completion(SyncStepResult(success: true))
+            refreshUserRecord(userRecord)
             
         }
         
@@ -412,7 +423,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                 
             }
             
-            Mist.localDataCoordinator.retrieveRecords(matching: recordInADeletedZone, inStorageWithScope: scope, fetchDepth: -1) { (operationResult, records) in
+            Mist.find(where: recordInADeletedZone, within: scope) { (operationResult, records) in
                 
                 guard operationResult.succeeded == true else {
                     
@@ -423,7 +434,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                     
                 }
                 
-                guard let records = records else {
+                guard records.count > 0 else {
                     
                     completed(ZonedSyncSummary(result: .success, errors:[], idsOfRelevantRecords: []))
                     return
@@ -432,7 +443,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                     
                 let recordsSet = Set(records)
                 
-                Mist.localDataCoordinator.removeRecords(recordsSet, fromStorageWith: scope, finished: { (removeOperationResult) in
+                Mist.remove(recordsSet, from: scope, finished: { (removeOperationResult) in
                     
                     let recordIds = recordsSet.map({ $0.identifier })
                     
@@ -506,64 +517,62 @@ internal class RemoteDataCoordinator : DataCoordinator {
                     
                     let recordIdentifiersForDeletedRecords = idsOfDeletedRecords.map({ $0.recordName }) as [RecordIdentifier]
                     
-                    Mist.localDataCoordinator.retrieveRecords(
-                        matching: { recordIdentifiersForDeletedRecords.contains($0.identifier) }, inStorageWithScope: scope, fetchDepth: -1,
-                        retrievalCompleted: { (fetchOperationResult, records) in
+                    Mist.find(where: { recordIdentifiersForDeletedRecords.contains($0.identifier) }, within: scope, finished: { (fetchOperationResult, records) in
                             
-                            var recordIdsOfRecordsToRemove: [RecordIdentifier] = []
-                            var recordsSetOfRecordsToRemove: Set<Record> = []
-                            if let records = records {
-                                recordIdsOfRecordsToRemove = records.map({ $0.identifier })
-                                recordsSetOfRecordsToRemove = Set(records)
-                            }
+                        var recordIdsOfRecordsToRemove: [RecordIdentifier] = []
+                        var recordsSetOfRecordsToRemove: Set<Record> = []
+                        if records.count > 0 {
+                            recordIdsOfRecordsToRemove = records.map({ $0.identifier })
+                            recordsSetOfRecordsToRemove = Set(records)
+                        }
+                        
+                        guard fetchOperationResult.succeeded == true else {
                             
-                            guard fetchOperationResult.succeeded == true else {
+                            let errors = errorsArray(from: fetchOperationResult.error)
+                            completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIdsOfRecordsToRemove))
+                            
+                            return
+                            
+                        }
+                        
+                        Mist.remove(recordsSetOfRecordsToRemove, from: scope, finished: { (removeOperationResult) in
+                            
+                            guard removeOperationResult.succeeded == true else {
                                 
-                                let errors = errorsArray(from: fetchOperationResult.error)
+                                let errors = errorsArray(from: removeOperationResult.error)
                                 completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIdsOfRecordsToRemove))
                                 
                                 return
                                 
                             }
                             
-                            Mist.localDataCoordinator.removeRecords(recordsSetOfRecordsToRemove, fromStorageWith: scope, finished: { (removeOperationResult) in
+                            var mistRecords: Set<Record> = []
+                            
+                            for changedCKRecord in changedRecords.records {
                                 
-                                guard removeOperationResult.succeeded == true else {
+                                let newMistRecord = Record(backingRemoteRecord: changedCKRecord)
+                                mistRecords.insert(newMistRecord)
+                                
+                            }
+                            
+                            Mist.add(mistRecords, to: scope, finished: { (addOperationResult) in
+                                
+                                let changedRecordsIds = changedRecords.recordIDs().map({ $0.recordName })
+                                
+                                guard addOperationResult.succeeded == true else {
                                     
                                     let errors = errorsArray(from: removeOperationResult.error)
-                                    completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: recordIdsOfRecordsToRemove))
+                                    completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: changedRecordsIds))
                                     
                                     return
                                     
                                 }
                                 
-                                var mistRecords: Set<Record> = []
-                                
-                                for changedCKRecord in changedRecords.records {
-                                    
-                                    let newMistRecord = Record(backingRemoteRecord: changedCKRecord)
-                                    mistRecords.insert(newMistRecord)
-                                    
-                                }
-                                
-                                Mist.localDataCoordinator.addRecords(mistRecords, toStorageWith: scope, finished: { (addOperationResult) in
-                                    
-                                    let changedRecordsIds = changedRecords.recordIDs().map({ $0.recordName })
-                                    
-                                    guard addOperationResult.succeeded == true else {
-                                        
-                                        let errors = errorsArray(from: removeOperationResult.error)
-                                        completed(ZonedSyncSummary(result: .partialFailure, errors: errors, idsOfRelevantRecords: changedRecordsIds))
-                                        
-                                        return
-                                        
-                                    }
-                                    
-                                    completed(ZonedSyncSummary(result: .success, errors: [], idsOfRelevantRecords: changedRecordsIds))
-                                    
-                                })
+                                completed(ZonedSyncSummary(result: .success, errors: [], idsOfRelevantRecords: changedRecordsIds))
                                 
                             })
+                            
+                        })
                             
                     })
                     
