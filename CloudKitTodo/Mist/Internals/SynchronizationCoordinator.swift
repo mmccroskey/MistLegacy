@@ -28,13 +28,36 @@ enum SyncDirection {
 
 struct SyncSummary {
     
+    static func syncSummaryForPreflightingFailure(withError error:Error?) -> SyncSummary {
+        
+        var errors: [Error] = []
+        if let error = error {
+            errors.append(error)
+        }
+        
+        let preflightingSummary = PreflightingSyncSummary(result: .totalFailure, errors: errors)
+        
+        let zonedDirectionalSummary = ZoneBasedDirectionalSyncSummary(result: .totalFailure, errors: [], zoneChangeSummary: nil, zoneDeletionSummary: nil)
+        let directionalSummary = DirectionalSyncSummary(result: .totalFailure)
+        let userScopedSummary = UserScopedSyncSummary(result: .totalFailure, errors: [], pullSummary: zonedDirectionalSummary, pushSummary: directionalSummary)
+        let publicScopedSummary = PublicScopedSyncSummary(result: .totalFailure, errors: [], pullSummary: directionalSummary, pushSummary: directionalSummary)
+        
+        let summary = SyncSummary(
+            result: .totalFailure, errors: errors,
+            preflightingSummary: preflightingSummary, publicSummary: publicScopedSummary, privateSummary: userScopedSummary, sharedSummary: userScopedSummary
+        )
+        
+        return summary
+        
+    }
+    
     let result: SyncResult
     let errors: [Error]
     
     let preflightingSummary: PreflightingSyncSummary
-    let publicSummary: PublicScopedSyncSummary
-    let privateSummary: UserScopedSyncSummary
-    let sharedSummary: UserScopedSyncSummary
+    let publicSummary: PublicScopedSyncSummary?
+    let privateSummary: UserScopedSyncSummary?
+    let sharedSummary: UserScopedSyncSummary?
     
 }
 
@@ -196,29 +219,6 @@ internal class SynchronizationCoordinator {
     
     func sync(_ qOS:QualityOfService?=QualityOfService.default, finished:((SyncSummary) -> Void)?=nil) {
         
-        func syncSummaryForPreflightingFailure(withError error:Error?) -> SyncSummary {
-            
-            var errors: [Error] = []
-            if let error = error {
-                errors.append(error)
-            }
-            
-            let preflightingSummary = PreflightingSyncSummary(result: .totalFailure, errors: errors)
-            
-            let zonedDirectionalSummary = ZoneBasedDirectionalSyncSummary(result: .totalFailure, errors: [], zoneChangeSummary: nil, zoneDeletionSummary: nil)
-            let directionalSummary = DirectionalSyncSummary(result: .totalFailure)
-            let userScopedSummary = UserScopedSyncSummary(result: .totalFailure, errors: [], pullSummary: zonedDirectionalSummary, pushSummary: directionalSummary)
-            let publicScopedSummary = PublicScopedSyncSummary(result: .totalFailure, errors: [], pullSummary: directionalSummary, pushSummary: directionalSummary)
-            
-            let summary = SyncSummary(
-                result: .totalFailure, errors: errors,
-                preflightingSummary: preflightingSummary, publicSummary: publicScopedSummary, privateSummary: userScopedSummary, sharedSummary: userScopedSummary
-            )
-            
-            return summary
-            
-        }
-        
         func syncSummaryFromDependentSummaries(
             _ publicPull:DirectionalSyncSummary?, publicPush:DirectionalSyncSummary?,
             privatePull:ZoneBasedDirectionalSyncSummary?, privatePush:DirectionalSyncSummary?,
@@ -317,7 +317,7 @@ internal class SynchronizationCoordinator {
                     guard result.success == true else {
                         
                         if let finished = finished {
-                            finished(syncSummaryForPreflightingFailure(withError: result.error))
+                            finished(SyncSummary.syncSummaryForPreflightingFailure(withError: result.error))
                         }
                         
                         return

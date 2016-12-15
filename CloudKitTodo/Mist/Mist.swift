@@ -142,10 +142,12 @@ class Mist {
             
             guard userExists else {
                 
-                // TODO: Call callback with failure
-//                if let finished = finished {
-//                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
-//                }
+                if let finished = finished {
+                    
+                    let syncSummary = SyncSummary.syncSummaryForPreflightingFailure(withError: self.singleton.noCurrentUserError.errorObject())
+                    finished(syncSummary)
+                    
+                }
                 
                 return
                 
