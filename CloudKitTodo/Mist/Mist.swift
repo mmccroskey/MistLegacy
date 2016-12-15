@@ -20,6 +20,8 @@ typealias SortClosure = ((Record,Record) throws -> Bool)
 
 struct Configuration {
     
+    var syncsAutomatically: Bool
+    
     var `public`: Scoped
     var `private`: Scoped
     
@@ -45,6 +47,7 @@ class Mist {
     // MARK: - Configuration Properties
     
     static var config: Configuration = Configuration(
+        syncsAutomatically: true,
         public: Configuration.Scoped(pullsRecordsMatchingDescriptors: nil),
         private: Configuration.Scoped(pullsRecordsMatchingDescriptors: nil)
     )
@@ -62,7 +65,7 @@ class Mist {
         var record: Record? = nil
         
         let operation = { record = self.singleton.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth) }
-        let internalFinished: ((RecordOperationResult) -> Void) = { recordOperationResult in
+        let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
             finished(recordOperationResult, record)
         }
         
@@ -78,7 +81,7 @@ class Mist {
         var records: [Record]? = nil
         
         let operation = { records = self.singleton.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth) }
-        let internalFinished: ((RecordOperationResult) -> Void) = { recordOperationResult in
+        let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
             finished(recordOperationResult, records)
         }
         
@@ -94,7 +97,7 @@ class Mist {
         var records: [Record]? = nil
         
         let operation = { records = self.singleton.localDataCoordinator.retrieveRecords(withType: type, matching: predicate, inStorageWithScope: within, fetchDepth: fetchDepth) }
-        let internalFinished: ((RecordOperationResult) -> Void) = { recordOperationResult in
+        let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
             finished(recordOperationResult, records)
         }
         
@@ -105,31 +108,31 @@ class Mist {
     
     // MARK: - Modifying Items
     
-    static func add(_ record:Record, to:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
+    static func add(_ record:Record, to:StorageScope, finished:((RecordOperationResult, DirectionalSyncSummary?) -> Void)?=nil) {
         
         let operation = { self.singleton.localDataCoordinator.addRecord(record, toStorageWith: to) }
-        self.performUserGuardedOperation(operation, finished: finished)
+        self.performUserGuardedOperation(operation, pushScope: to, finished: finished)
         
     }
     
-    static func add(_ records:Set<Record>, to:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
+    static func add(_ records:Set<Record>, to:StorageScope, finished:((RecordOperationResult, DirectionalSyncSummary?) -> Void)?=nil) {
         
         let operation = { self.singleton.localDataCoordinator.addRecords(records, toStorageWith: to) }
-        self.performUserGuardedOperation(operation, finished: finished)
+        self.performUserGuardedOperation(operation, pushScope: to, finished: finished)
         
     }
     
-    static func remove(_ record:Record, from:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
+    static func remove(_ record:Record, from:StorageScope, finished:((RecordOperationResult, DirectionalSyncSummary?) -> Void)?=nil) {
         
         let operation = { self.singleton.localDataCoordinator.removeRecord(record, fromStorageWith: from) }
-        self.performUserGuardedOperation(operation, finished: finished)
+        self.performUserGuardedOperation(operation, pushScope: from, finished: finished)
         
     }
     
-    static func remove(_ records:Set<Record>, from:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
+    static func remove(_ records:Set<Record>, from:StorageScope, finished:((RecordOperationResult, DirectionalSyncSummary?) -> Void)?=nil) {
         
         let operation = { self.singleton.localDataCoordinator.removeRecords(records, fromStorageWith: from) }
-        self.performUserGuardedOperation(operation, finished: finished)
+        self.performUserGuardedOperation(operation, pushScope: from, finished: finished)
         
     }
     
@@ -213,8 +216,30 @@ class Mist {
             
         }
         
-        let internalFinished: ((RecordOperationResult) -> Void) = { recordOperationResult in
+        let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
             finished(recordOperationResult, unpushedChanges, unpushedDeletions)
+        }
+        
+        self.performUserGuardedOperation(operation, finished: internalFinished)
+        
+    }
+    
+    internal static func internalAdd(_ records:Set<Record>, to:StorageScope, finished:((RecordOperationResult) -> Void)) {
+        
+        let operation = { self.singleton.localDataCoordinator.addRecords(records, toStorageWith: to) }
+        let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
+            finished(recordOperationResult)
+        }
+        
+        self.performUserGuardedOperation(operation, finished: internalFinished)
+        
+    }
+    
+    internal static func internalRemove(_ records:Set<Record>, from:StorageScope, finished:((RecordOperationResult) -> Void)) {
+        
+        let operation = { self.singleton.localDataCoordinator.removeRecords(records, fromStorageWith: from) }
+        let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
+            finished(recordOperationResult)
         }
         
         self.performUserGuardedOperation(operation, finished: internalFinished)
@@ -231,7 +256,7 @@ class Mist {
     
     // MARK: - Private Functions
     
-    private static func performUserGuardedOperation(_ operation:(() -> Void), finished:((RecordOperationResult) -> Void)?) {
+    private static func performUserGuardedOperation(_ operation:(() -> Void), pushScope:StorageScope?=nil, finished:((RecordOperationResult, DirectionalSyncSummary?) -> Void)?) {
         
         Mist.singleton.cacheInteractionQueue.addOperation {
             
@@ -240,17 +265,33 @@ class Mist {
                 guard userExists else {
                     
                     if let finished = finished {
-                        finished(RecordOperationResult(succeeded: false, error: self.singleton.noCurrentUserError.errorObject()))
+                        finished(RecordOperationResult(succeeded: false, error: self.singleton.noCurrentUserError.errorObject()), nil)
                     }
                     
                     return
                     
                 }
                 
+                let operationResult = RecordOperationResult(succeeded: true, error: nil)
+                
                 operation()
                 
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: true, error: nil))
+                if Mist.config.syncsAutomatically == true, let pushScope = pushScope {
+                    
+                    self.singleton.remoteDataCoordinator.performDatabasePush(for: pushScope, completed: { (directionalSyncSummary) in
+                        
+                        if let finished = finished {
+                            finished(operationResult, directionalSyncSummary)
+                        }
+                        
+                    })
+                    
+                } else {
+                    
+                    if let finished = finished {
+                        finished(operationResult, nil)
+                    }
+                    
                 }
                 
             }

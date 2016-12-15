@@ -443,7 +443,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                     
                 let recordsSet = Set(records)
                 
-                Mist.remove(recordsSet, from: scope, finished: { (removeOperationResult) in
+                Mist.internalRemove(recordsSet, from: scope, finished: { (removeOperationResult) in
                     
                     let recordIds = recordsSet.map({ $0.identifier })
                     
@@ -535,7 +535,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                             
                         }
                         
-                        Mist.remove(recordsSetOfRecordsToRemove, from: scope, finished: { (removeOperationResult) in
+                        Mist.internalRemove(recordsSetOfRecordsToRemove, from: scope, finished: { (removeOperationResult) in
                             
                             guard removeOperationResult.succeeded == true else {
                                 
@@ -555,7 +555,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                                 
                             }
                             
-                            Mist.add(mistRecords, to: scope, finished: { (addOperationResult) in
+                            Mist.internalAdd(mistRecords, to: scope, finished: { (addOperationResult) in
                                 
                                 let changedRecordsIds = changedRecords.recordIDs().map({ $0.recordName })
                                 
