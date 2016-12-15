@@ -434,7 +434,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                     
                 }
                 
-                guard records.count > 0 else {
+                guard let records = records else {
                     
                     completed(ZonedSyncSummary(result: .success, errors:[], idsOfRelevantRecords: []))
                     return
@@ -521,7 +521,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
                             
                         var recordIdsOfRecordsToRemove: [RecordIdentifier] = []
                         var recordsSetOfRecordsToRemove: Set<Record> = []
-                        if records.count > 0 {
+                        if let records = records {
                             recordIdsOfRecordsToRemove = records.map({ $0.identifier })
                             recordsSetOfRecordsToRemove = Set(records)
                         }
@@ -730,40 +730,65 @@ internal class RemoteDataCoordinator : DataCoordinator {
     
     func performDatabasePush(for scope:CKDatabaseScope, completed:((DirectionalSyncSummary) -> Void)) {
         
-        let unpushedChanges = self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges.values
-        let unpushedDeletions = self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedDeletions.values
+        Mist.recordsWithUnpushedChangesAndDeletions(forScope: scope) { (operationResult, fetchedUnpushedChanges, fetchedUnpushedDeletions) in
         
-        let unpushedChangesCKRecords = unpushedChanges.map({ $0.backingRemoteRecord }) as [CKRecord]
-        let unpushedDeletionsCKRecordIDs = unpushedDeletions.map({ CKRecordID(recordName: $0.identifier) }) as [CKRecordID]
-        
-        
-        let modifyOperation = CKModifyRecordsOperation(recordsToSave: unpushedChangesCKRecords, recordIDsToDelete: unpushedDeletionsCKRecordIDs)
-        modifyOperation.modifyRecordsCompletionBlock = { (savedRecords, recordIDsOfDeletedRecords, operationError) in
-
-            guard operationError == nil else {
+            guard operationResult.succeeded == true else {
                 
-                completed(DirectionalSyncSummary(result: .totalFailure, error: operationError!))
+                if let error = operationResult.error {
+                    completed(DirectionalSyncSummary(result: .totalFailure, error: error))
+                } else {
+                    completed(DirectionalSyncSummary(result: .totalFailure))
+                }
+                
                 return
+            }
+            
+            let unpushedChanges: [Record]
+            if let extantUnpushedChanges = fetchedUnpushedChanges {
+                unpushedChanges = extantUnpushedChanges
+            } else {
+                unpushedChanges = []
+            }
+            
+            let unpushedDeletions: [Record]
+            if let extantUnpushedDeletions = fetchedUnpushedDeletions {
+                unpushedDeletions = extantUnpushedDeletions
+            } else {
+                unpushedDeletions = []
+            }
+            
+            let unpushedChangesCKRecords = unpushedChanges.map({ $0.backingRemoteRecord }) as [CKRecord]
+            let unpushedDeletionsCKRecordIDs = unpushedDeletions.map({ CKRecordID(recordName: $0.identifier) }) as [CKRecordID]
+            
+            let modifyOperation = CKModifyRecordsOperation(recordsToSave: unpushedChangesCKRecords, recordIDsToDelete: unpushedDeletionsCKRecordIDs)
+            modifyOperation.modifyRecordsCompletionBlock = { (savedRecords, recordIDsOfDeletedRecords, operationError) in
+                
+                guard operationError == nil else {
+                    
+                    completed(DirectionalSyncSummary(result: .totalFailure, error: operationError!))
+                    return
+                    
+                }
+                
+                
+                var idsOfRecordsChanged: [RecordIdentifier] = []
+                if let savedRecords = savedRecords {
+                    idsOfRecordsChanged = savedRecords.map({ $0.recordID.recordName })
+                }
+                
+                var idsOfRecordsDeleted: [RecordIdentifier] = []
+                if let recordIDsOfDeletedRecords = recordIDsOfDeletedRecords {
+                    idsOfRecordsDeleted = recordIDsOfDeletedRecords.map({ $0.recordName })
+                }
+                
+                completed(DirectionalSyncSummary(result: .success, idsOfRecordsChanged: idsOfRecordsChanged, idsOfRecordsDeleted: idsOfRecordsDeleted))
                 
             }
             
+            let database = self.database(forScope: scope)
+            database.add(modifyOperation)
             
-            var idsOfRecordsChanged: [RecordIdentifier] = []
-            if let savedRecords = savedRecords {
-                idsOfRecordsChanged = savedRecords.map({ $0.recordID.recordName })
-            }
-            
-            var idsOfRecordsDeleted: [RecordIdentifier] = []
-            if let recordIDsOfDeletedRecords = recordIDsOfDeletedRecords {
-                idsOfRecordsDeleted = recordIDsOfDeletedRecords.map({ $0.recordName })
-            }
-            
-            completed(DirectionalSyncSummary(result: .success, idsOfRecordsChanged: idsOfRecordsChanged, idsOfRecordsDeleted: idsOfRecordsDeleted))
-
         }
-        
-        let database = self.database(forScope: scope)
-        database.add(modifyOperation)
         
     }
     

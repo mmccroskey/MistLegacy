@@ -28,11 +28,11 @@ class Record: Hashable {
         Mist.get(identifier, from: from, fetchDepth: fetchDepth, finished: finished)
     }
     
-    static func find(where filter:FilterClosure, within:StorageScope, sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]) -> Void)) {
+    static func find(where filter:FilterClosure, within:StorageScope, sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
         Mist.find(recordsOfType: self, where: filter, within: within, fetchDepth: fetchDepth, finished: finished)
     }
     
-    static func find(where predicate:NSPredicate, within:StorageScope, sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]) -> Void)) {
+    static func find(where predicate:NSPredicate, within:StorageScope, sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
         Mist.find(recordsOfType: self, where: predicate, within: within, fetchDepth: fetchDepth, finished: finished)
     }
     

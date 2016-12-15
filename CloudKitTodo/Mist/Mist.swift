@@ -52,7 +52,6 @@ class Mist {
     
     // MARK: - Public Properties
     
-    // TODO: Implement code to keep this up to date
     static private(set) var currentUser: CloudKitUser? = nil
     
     
@@ -60,73 +59,46 @@ class Mist {
     
     static func get(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, Record?) -> Void)) {
         
-        self.checkCurrentUserStatus { (userExists) in
-            
-            guard userExists else {
-                
-                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), nil)
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                let record = self.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth)
-                finished(RecordOperationResult(succeeded: true, error: nil), record)
-                
-            }
-            
+        var record: Record? = nil
+        
+        let operation = { record = self.singleton.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth) }
+        let internalFinished: ((RecordOperationResult) -> Void) = { recordOperationResult in
+            finished(recordOperationResult, record)
         }
+        
+        self.performUserGuardedOperation(operation, finished: internalFinished)
         
     }
     
     static func find(
         recordsOfType type:Record.Type?=nil, where filter:FilterClosure, within:StorageScope,
-        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]) -> Void)
+        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
     ) {
         
-        self.checkCurrentUserStatus { (userExists) in
-            
-            guard userExists else {
-                
-                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), [])
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                let records = self.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth)
-                finished(RecordOperationResult(succeeded: true, error: nil), records)
-                
-            }
-            
+        var records: [Record]? = nil
+        
+        let operation = { records = self.singleton.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth) }
+        let internalFinished: ((RecordOperationResult) -> Void) = { recordOperationResult in
+            finished(recordOperationResult, records)
         }
+        
+        self.performUserGuardedOperation(operation, finished: internalFinished)
         
     }
     
     static func find(
         recordsOfType type:Record.Type?=nil, where predicate:NSPredicate, within:StorageScope,
-        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]) -> Void)
+        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
     ) {
         
-        self.checkCurrentUserStatus { (userExists) in
-            
-            guard userExists else {
-                
-                finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()), [])
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                let records = self.localDataCoordinator.retrieveRecords(withType: type, matching: predicate, inStorageWithScope: within, fetchDepth: fetchDepth)
-                finished(RecordOperationResult(succeeded: true, error: nil), records)
-                
-            }
-            
+        var records: [Record]? = nil
+        
+        let operation = { records = self.singleton.localDataCoordinator.retrieveRecords(withType: type, matching: predicate, inStorageWithScope: within, fetchDepth: fetchDepth) }
+        let internalFinished: ((RecordOperationResult) -> Void) = { recordOperationResult in
+            finished(recordOperationResult, records)
         }
+        
+        self.performUserGuardedOperation(operation, finished: internalFinished)
         
     }
     
@@ -135,113 +107,29 @@ class Mist {
     
     static func add(_ record:Record, to:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        self.checkCurrentUserStatus { (userExists) in
-            
-            guard userExists else {
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
-                }
-                
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                self.localDataCoordinator.addRecord(record, toStorageWith: to)
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: true, error: nil))
-                }
-                
-            }
-            
-        }
+        let operation = { self.singleton.localDataCoordinator.addRecord(record, toStorageWith: to) }
+        self.performUserGuardedOperation(operation, finished: finished)
         
     }
     
     static func add(_ records:Set<Record>, to:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        self.checkCurrentUserStatus { (userExists) in
-            
-            guard userExists else {
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
-                }
-                
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                self.localDataCoordinator.addRecords(records, toStorageWith: to)
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: true, error: nil))
-                }
-                
-            }
-            
-        }
+        let operation = { self.singleton.localDataCoordinator.addRecords(records, toStorageWith: to) }
+        self.performUserGuardedOperation(operation, finished: finished)
         
     }
     
     static func remove(_ record:Record, from:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        self.checkCurrentUserStatus { (userExists) in
-            
-            guard userExists else {
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
-                }
-                
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                self.localDataCoordinator.removeRecord(record, fromStorageWith: from)
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: true, error: nil))
-                }
-                
-            }
-            
-        }
+        let operation = { self.singleton.localDataCoordinator.removeRecord(record, fromStorageWith: from) }
+        self.performUserGuardedOperation(operation, finished: finished)
         
     }
     
     static func remove(_ records:Set<Record>, from:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        self.checkCurrentUserStatus { (userExists) in
-            
-            guard userExists else {
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
-                }
-                
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                self.localDataCoordinator.removeRecords(records, fromStorageWith: from)
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: true, error: nil))
-                }
-                
-            }
-            
-        }
+        let operation = { self.singleton.localDataCoordinator.removeRecords(records, fromStorageWith: from) }
+        self.performUserGuardedOperation(operation, finished: finished)
         
     }
     
@@ -250,7 +138,7 @@ class Mist {
     
     static func sync(_ qOS:QualityOfService?=QualityOfService.default, finished:((SyncSummary) -> Void)?=nil) {
         
-        self.checkCurrentUserStatus { (userExists) in
+        self.singleton.checkCurrentUserStatus { (userExists) in
             
             guard userExists else {
                 
@@ -263,7 +151,7 @@ class Mist {
                 
             }
             
-            self.synchronizationCoordinator.sync(qOS, finished: finished)
+            self.singleton.synchronizationCoordinator.sync(qOS, finished: finished)
             
         }
         
@@ -272,10 +160,10 @@ class Mist {
     
     // MARK: - Internal Properties
     
-    internal static let remoteDataCoordinator = RemoteDataCoordinator()
-    internal static let synchronizationCoordinator = SynchronizationCoordinator()
+    internal let remoteDataCoordinator = RemoteDataCoordinator()
+    internal let synchronizationCoordinator = SynchronizationCoordinator()
     
-    internal static let noCurrentUserError = ErrorStruct(
+    internal let noCurrentUserError = ErrorStruct(
         code: 401, title: "User Not Authenticated",
         failureReason: "The user is not currently logged in to iCloud. The user must be logged in in order for us to save data to the private or shared scopes.",
         description: "Get the user to log in and try this request again."
@@ -286,9 +174,9 @@ class Mist {
     
     internal static func userRecordExists(withIdentifier identifier:RecordIdentifier, finished:((Record?) -> Void)) {
         
-        Mist.cacheInteractionQueue.addOperation {
+        self.singleton.cacheInteractionQueue.addOperation {
             
-            let potentiallyExtantUserRecord = self.localDataCoordinator.userRecordExists(withIdentifier: identifier)
+            let potentiallyExtantUserRecord = self.singleton.localDataCoordinator.userRecordExists(withIdentifier: identifier)
             finished(potentiallyExtantUserRecord)
             
         }
@@ -297,9 +185,9 @@ class Mist {
     
     internal static func setCurrentUser(_ userRecord:CloudKitUser, finished:((RecordOperationResult) -> Void)) {
         
-        Mist.cacheInteractionQueue.addOperation {
+        self.singleton.cacheInteractionQueue.addOperation {
             
-            self.localDataCoordinator.setCurrentUser(userRecord)
+            self.singleton.localDataCoordinator.setCurrentUser(userRecord)
             self.currentUser = userRecord
             
             finished(RecordOperationResult(succeeded: true, error: nil))
@@ -308,31 +196,76 @@ class Mist {
         
     }
     
+    internal static func recordsWithUnpushedChangesAndDeletions(forScope scope:StorageScope, finished:((RecordOperationResult, [Record]?, [Record]?) -> Void)) {
+        
+        var unpushedChanges: [Record]? = nil
+        var unpushedDeletions: [Record]? = nil
+        
+        let operation = {
+            
+            let unpushedChangeData = self.singleton.localDataCoordinator.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges.values
+            unpushedChanges = unpushedChangeData.map({ $0 }) // Because Swift compiler is a dumbass
+            
+            let unpushedDeletionData = self.singleton.localDataCoordinator.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedDeletions.values
+            unpushedDeletions = unpushedDeletionData.map({ $0 }) // Because Swift compiler is a dumbass
+            
+        }
+        
+        let internalFinished: ((RecordOperationResult) -> Void) = { recordOperationResult in
+            finished(recordOperationResult, unpushedChanges, unpushedDeletions)
+        }
+        
+        self.performUserGuardedOperation(operation, finished: internalFinished)
+        
+    }
+    
     
     // MARK: - Private Properties
     
-    private static let cacheInteractionQueue = Queue()
-    private static let localDataCoordinator = LocalDataCoordinator()
+    private static let singleton = Mist()
+    private let cacheInteractionQueue = Queue()
+    private let localDataCoordinator = LocalDataCoordinator()
     
     
     // MARK: - Private Functions
     
-    private static func checkCurrentUserStatus(completion:((Bool) -> Void)) {
+    private static func performUserGuardedOperation(_ operation:(() -> Void), finished:((RecordOperationResult) -> Void)?) {
         
-        if self.currentUser != nil {
+        Mist.singleton.cacheInteractionQueue.addOperation {
+            
+            self.singleton.checkCurrentUserStatus { (userExists) in
+                
+                guard userExists else {
+                    
+                    if let finished = finished {
+                        finished(RecordOperationResult(succeeded: false, error: self.singleton.noCurrentUserError.errorObject()))
+                    }
+                    
+                    return
+                    
+                }
+                
+                operation()
+                
+                if let finished = finished {
+                    finished(RecordOperationResult(succeeded: true, error: nil))
+                }
+                
+            }
+            
+        }
+        
+    }
+    
+    private func checkCurrentUserStatus(completion:((Bool) -> Void)) {
+        
+        if Mist.currentUser != nil {
             
             completion(true)
             
         } else {
             
-            let remote = self.remoteDataCoordinator
-            remote.confirmICloudAvailable { (result) in
-                remote.confirmUserAuthenticated(result, completion: { (result) in
-                    remote.confirmUserRecordExists(result, completion: { (result) in
-                        completion(result.success)
-                    })
-                })
-            }
+            Mist.singleton.synchronizationCoordinator.refreshUser(completion)
             
         }
         

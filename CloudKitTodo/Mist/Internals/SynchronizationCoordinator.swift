@@ -179,6 +179,21 @@ internal struct ErrorStruct {
 
 internal class SynchronizationCoordinator {
     
+    private let remoteDataCoordinator = RemoteDataCoordinator()
+    
+    func refreshUser(_ completion:((Bool) -> Void)) {
+        
+        let remote = self.remoteDataCoordinator
+        remote.confirmICloudAvailable { (result) in
+            remote.confirmUserAuthenticated(result, completion: { (result) in
+                remote.confirmUserRecordExists(result, completion: { (result) in
+                    completion(result.success)
+                })
+            })
+        }
+        
+    }
+    
     func sync(_ qOS:QualityOfService?=QualityOfService.default, finished:((SyncSummary) -> Void)?=nil) {
         
         func syncSummaryForPreflightingFailure(withError error:Error?) -> SyncSummary {
@@ -294,7 +309,7 @@ internal class SynchronizationCoordinator {
             
         }
         
-        let remote = Mist.remoteDataCoordinator
+        let remote = self.remoteDataCoordinator
         remote.confirmICloudAvailable { (result) in
             remote.confirmUserAuthenticated(result, completion: { (result) in
                 remote.confirmUserRecordExists(result, completion: { (result) in
