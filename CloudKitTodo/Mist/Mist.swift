@@ -135,105 +135,49 @@ class Mist {
     
     static func add(_ record:Record, to:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        self.checkCurrentUserStatus { (userExists) in
-            
-            guard userExists else {
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
-                }
-                
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                self.localDataCoordinator.addRecord(record, toStorageWith: to)
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: true, error: nil))
-                }
-                
-            }
-            
-        }
+        let operation = { self.localDataCoordinator.addRecord(record, toStorageWith: to) }
+        self.performUserGuardedOperation(operation, finished: finished)
         
     }
     
     static func add(_ records:Set<Record>, to:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        self.checkCurrentUserStatus { (userExists) in
-            
-            guard userExists else {
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
-                }
-                
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                self.localDataCoordinator.addRecords(records, toStorageWith: to)
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: true, error: nil))
-                }
-                
-            }
-            
-        }
+        let operation = { self.localDataCoordinator.addRecords(records, toStorageWith: to) }
+        self.performUserGuardedOperation(operation, finished: finished)
         
     }
     
     static func remove(_ record:Record, from:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        self.checkCurrentUserStatus { (userExists) in
-            
-            guard userExists else {
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
-                }
-                
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                self.localDataCoordinator.removeRecord(record, fromStorageWith: from)
-                
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: true, error: nil))
-                }
-                
-            }
-            
-        }
+        let operation = { self.localDataCoordinator.removeRecord(record, fromStorageWith: from) }
+        self.performUserGuardedOperation(operation, finished: finished)
         
     }
     
     static func remove(_ records:Set<Record>, from:StorageScope, finished:((RecordOperationResult) -> Void)?=nil) {
         
-        self.checkCurrentUserStatus { (userExists) in
+        let operation = { self.localDataCoordinator.removeRecords(records, fromStorageWith: from) }
+        self.performUserGuardedOperation(operation, finished: finished)
+        
+    }
+    
+    private static func performUserGuardedOperation(_ operation:(() -> Void), finished:((RecordOperationResult) -> Void)?) {
+        
+        Mist.cacheInteractionQueue.addOperation {
             
-            guard userExists else {
+            self.checkCurrentUserStatus { (userExists) in
                 
-                if let finished = finished {
-                    finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+                guard userExists else {
+                    
+                    if let finished = finished {
+                        finished(RecordOperationResult(succeeded: false, error: self.noCurrentUserError.errorObject()))
+                    }
+                    
+                    return
+                    
                 }
                 
-                return
-                
-            }
-            
-            Mist.cacheInteractionQueue.addOperation {
-                
-                self.localDataCoordinator.removeRecords(records, fromStorageWith: from)
+                operation()
                 
                 if let finished = finished {
                     finished(RecordOperationResult(succeeded: true, error: nil))
