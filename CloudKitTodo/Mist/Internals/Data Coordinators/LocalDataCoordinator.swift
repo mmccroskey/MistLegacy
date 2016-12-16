@@ -53,7 +53,7 @@ internal class LocalDataCoordinator : DataCoordinator {
         
         let cacheForUserRecord = self.localCacheCoordinator.userCache(associatedWith: identifier)
         
-        if let userRecord = cacheForUserRecord.publicCache.cachedRecords[identifier] {
+        if let userRecord = cacheForUserRecord.publicCache.cachedRecordWithIdentifier(identifier) {
             return userRecord
         } else {
             return nil
@@ -64,13 +64,13 @@ internal class LocalDataCoordinator : DataCoordinator {
     internal func setCurrentUser(_ userRecord:CloudKitUser) {
         
         let userCache = self.localCacheCoordinator.userCache(associatedWith: userRecord.identifier)
-        userCache.publicCache.cachedRecords[userRecord.identifier] = userRecord
+        userCache.publicCache.addCachedRecord(userRecord)
         
     }
     
     func retrieveRecord(matching identifier:RecordIdentifier, fromStorageWithScope scope:StorageScope, fetchDepth:Int) -> Record? {
         
-        let record = self.currentUserCache.scopedCache(withScope: scope).cachedRecords[identifier]
+        let record = self.currentUserCache.scopedCache(withScope: scope).cachedRecordWithIdentifier(identifier)
         
         self.associateRelatedRecords(for: record, in: scope, using: fetchDepth)
         
@@ -92,7 +92,7 @@ internal class LocalDataCoordinator : DataCoordinator {
         
         do {
             
-            let initialRecords = try self.currentUserCache.scopedCache(withScope: scope).cachedRecords.values.filter(filter)
+            let initialRecords = try self.currentUserCache.scopedCache(withScope: scope).cachedRecords(matching: filter)
             
             let typeFilteredRecords: [Record]
             if let typeFilter = typeFilter {
@@ -146,11 +146,13 @@ internal class LocalDataCoordinator : DataCoordinator {
             return
         }
         
-        for record in records {
+        switch changeType {
             
-            switch changeType {
-                
-            case .addition:
+        case .addition:
+            
+            var recordsToUpdate: Set<Record> = []
+            
+            for record in records {
                 
                 guard ((record.scope == nil) || (record.scope == scope)) else {
                     fatalError("The Record cannot be saved to the \(scope) scope -- it's already saved in the \(record.scope) scope.")
@@ -209,17 +211,27 @@ internal class LocalDataCoordinator : DataCoordinator {
                     
                 }
                 
-                self.currentUserCache.scopedCache(withScope: scope).cachedRecords[record.identifier] = record
+                recordsToUpdate.insert(record)
                 self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges[record.identifier] = record
                 
-            case .removal:
+            }
+            
+            self.currentUserCache.scopedCache(withScope: scope).addCachedRecords(recordsToUpdate)
+            
+        case .removal:
+            
+            var idsOfRecordsToRemove: Set<RecordIdentifier> = []
+            
+            for record in records {
                 
-                self.currentUserCache.scopedCache(withScope: scope).cachedRecords.removeValue(forKey: record.identifier)
+                idsOfRecordsToRemove.insert(record.identifier)
+                
                 self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges.removeValue(forKey: record.identifier)
-                
                 self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedDeletions[record.identifier] = record
                 
             }
+            
+            self.currentUserCache.scopedCache(withScope: scope).removeCachedRecordsWithIdentifiers(idsOfRecordsToRemove)
             
         }
         
