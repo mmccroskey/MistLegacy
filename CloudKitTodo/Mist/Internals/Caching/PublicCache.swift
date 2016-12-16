@@ -74,7 +74,7 @@ internal class PublicCache: ScopedCache {
             
         }
         
-        self.updateRecordDescriptors()
+        self.updateQuerySubscriptions()
         
     }
     
@@ -91,11 +91,11 @@ internal class PublicCache: ScopedCache {
             
         }
         
-        self.updateRecordDescriptors()
+        self.updateQuerySubscriptions()
         
     }
     
-    private func updateRecordDescriptors() {
+    private func updateQuerySubscriptions() {
         
         let recordIdsRecordTypes: [String] = self.idsOflocallyCreatedRecordsByRecordType.keys.map { (key) -> String in return key }
         let recordIdsRecordTypesSet: Set<String> = Set(recordIdsRecordTypes)
