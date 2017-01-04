@@ -11,7 +11,7 @@ Mist is a lightweight adapter for CloudKit that supports local persistence, cust
 
 ## Communication
 - If you **found a bug**, [open an issue](https://github.com/mmccroskey/Mist/issues/new).
-- If you **have a feature request**, [open an issue](https://github.com/mmccroskey/Mist/issues/new)
+- If you **have a feature request**, [open an issue](https://github.com/mmccroskey/Mist/issues/new).
 - If you **want to contribute**, [submit a pull request](https://github.com/mmccroskey/Mist/pulls/new).
 
 ## Installation
@@ -22,22 +22,30 @@ Mist is a lightweight adapter for CloudKit that supports local persistence, cust
 
 ## Usage
 
-### Create a Record
+### Creating a Record
 All Records in Mist must be instances of subclasses of `Record`:
 
 ```swift
 import Mist
 
 class Todo : Record {
-
+	
+	
+	// MARK: - Initializers
+	// All subclasses of Record must call Record's init, passing the class name	
+	
 	init() { super.init(className: "Todo") }
-
+	
+	
+	// MARK: - Properties
+	// All properties 
+	
 	var title: String? {
 		
 		get { return self.propertyValue(forKey: "title") as? String }
-        	set { self.setPropertyValue(newValue as? RecordValue, forKey:"title") }
-        
-    }
+		set { self.setPropertyValue(newValue as? RecordValue, forKey:"title") }
+		
+	}
     
     var dueDate: Date? {
         
