@@ -105,6 +105,7 @@ Let's break down what we're doing above:
 5. We perform a query operation (`CKQueryOperation`, subclass of `CKOperation`) against our database and as part of that we:
 	1. Check for errors and potentially recursively call the query if we didn't get all the results the first time, and
 	2. Add each Record we receive to our `todosINeedToDo` array.
+6. We print the Todos that we received from CloudKit.
 	
 ##### How Mist Does Data Interaction
 
