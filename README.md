@@ -22,36 +22,62 @@ Mist is a lightweight adapter for CloudKit that supports local persistence, cust
 
 ## Usage
 
-### Creating a Record
+To use Mist, start by creating subclasses of `Record` for each Record Type in your app's CloudKit schema.
+
+### Creating a Record Subclass
 All Records in Mist must be instances of subclasses of `Record`:
 
 ```swift
 import Mist
 
 class Todo : Record {
-	
-	
-	// MARK: - Initializers
-	// All subclasses of Record must call Record's init, passing the class name	
-	
-	init() { super.init(className: "Todo") }
-	
-	
-	// MARK: - Properties
-	// All properties 
-	
-	var title: String? {
-		
-		get { return self.propertyValue(forKey: "title") as? String }
-		set { self.setPropertyValue(newValue as? RecordValue, forKey:"title") }
-		
-	}
+
+    // MARK: - Initializers
+    // All subclasses of Record must call Record's init, passing the class name	
+    
+    init() { super.init(className: "Todo") }
+    
+    
+    // MARK: - Properties
+    // All properties of Record subclasses must be computed, 
+    // and must call propertyValue/setPropertyValue.
+    
+    var title: String? {
+    
+        get { return self.propertyValue(forKey: "title") as? String }
+        set { self.setPropertyValue(newValue as? RecordValue, forKey:"title") }
+    	
+    }
     
     var dueDate: Date? {
-        
+    
         get { return self.propertyValue(forKey: "dueDate") as? Date }
         set { self.setPropertyValue(newValue as? RecordValue, forKey: "dueDate") }
-        
+    	
+    }
+    
+    // If you know a property will always have a value, then you can g
+    // set its initial value, make it non-optional, and force the casting
+    // of the object returned by the get and provided in the set.
+    var completed: Bool = false {
+    
+        get { return self.propertyValue(forKey: "completed") as! Bool }
+        set { self.setPropertyValue(newValue as RecordValue, forKey: "completed") }
+    
+    }
+    
+    
+    // MARK: - Relationships
+    // Relationships are just like properties, except that you use relatedRecord
+    // and setRelatedRecord rather than using propertyValue and setPropertyValue.
+    // These relationship-specific functions ensure that CKReferences are created
+    // and destroyed as needed behind the scenes.
+	
+    var attachment: Attachment? {
+    
+        get { return self.relatedRecord(forKey: "attachment") as? Attachment }
+	set { self.setRelatedRecord(newValue, forKey: "attachment") }
+    
     }
     
 }
