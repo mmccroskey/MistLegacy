@@ -33,14 +33,15 @@ import Mist
 class Todo : Record {
 
     // MARK: - Initializers
-    // All subclasses of Record must call Record's init, passing the class name	
+    // All subclasses of Record must call Record's init, passing the subclass name	
     
     init() { super.init(className: "Todo") }
     
     
     // MARK: - Properties
     // All properties of Record subclasses must be computed, 
-    // and must call propertyValue/setPropertyValue.
+    // and must call propertyValue/setPropertyValue. This means that
+    // the types of all properties must conform to the RecordValue protocol.
     
     var title: String? {
     
@@ -56,7 +57,7 @@ class Todo : Record {
     	
     }
     
-    // If you know a property will always have a value, then you can g
+    // If you know a property will always have a value, then you can
     // set its initial value, make it non-optional, and force the casting
     // of the object returned by the get and provided in the set.
     var completed: Bool = false {
@@ -71,12 +72,13 @@ class Todo : Record {
     // Relationships are just like properties, except that you use relatedRecord
     // and setRelatedRecord rather than using propertyValue and setPropertyValue.
     // These relationship-specific functions ensure that CKReferences are created
-    // and destroyed as needed behind the scenes.
+    // and destroyed as needed behind the scenes. The types of all relationships
+    // must be subclasses of Record.
 	
     var attachment: Attachment? {
     
         get { return self.relatedRecord(forKey: "attachment") as? Attachment }
-	set { self.setRelatedRecord(newValue, forKey: "attachment") }
+        set { self.setRelatedRecord(newValue, forKey: "attachment") }
     
     }
     
