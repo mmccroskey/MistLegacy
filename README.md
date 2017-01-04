@@ -39,7 +39,7 @@ As described in the [CloudKit documentation](https://developer.apple.com/library
 
 *(Graphic Goes Here)*
 
-Therefore, all Users share the Public Database, but each User has her own Private Database and her own Shared Database.
+Therefore, all Users share the same Public Database, but each User has her own Private Database and her own Shared Database.
 
 ##### How Mist Stores Data
 
