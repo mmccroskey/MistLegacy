@@ -750,6 +750,16 @@ Todo.find(where: { $0.completed == false }, within: .public) { (recordOperationR
 
 ```
 
+### Typed Records with Real Relationships
+
+Typed Records with Real Relationships goes here.
+
+### Automatic Synchronization
+
+Automatic Synchronization goes here.
+
+---
+
 ## FAQs
 
 FAQs go here.
