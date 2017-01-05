@@ -27,7 +27,7 @@ Before installing and using Mist, ensure that your application is configured to 
 
 ### Getting Set Up
 
-After [installing Mist](https://github.com/mmccroskey/Mist/blob/master/README.md#installation), you'll need to create you `Record` subclasses.
+After [installing Mist](https://github.com/mmccroskey/Mist/blob/master/README.md#installation), you'll need to create your `Record` subclasses.
 
 #### Creating a Record Subclass
 
