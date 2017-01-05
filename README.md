@@ -12,7 +12,7 @@ Mist was created because **CloudKit is great, but it has some fundamental shortc
 
 * Although it allows you to powerfully sync records between cloud and device, it doesn't let you save them to a device once they've arrived;
 * Although it has a highly flexible approach to data modelling, that flexibility makes it very verbose and error-prone to use;
-* Although it has incredibly powerful features for synchroniziation, they're fairly arcane & completely opt-in.
+* Although it has incredibly powerful features for efficient synchronization, they're fairly arcane & completely opt-in.
 
 As stated in the repo description, Mist seeks to solve these problems by directly supporting **local persistence**, by requiring the use of **typed models with true relationships**, & by providing **automatic synchronization**. 
 
