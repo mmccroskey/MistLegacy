@@ -102,13 +102,6 @@ class Todo : Record {
     	
     }
     
-    var dueDate: Date? {
-    
-        get { return self.propertyValue(forKey: "dueDate") as? Date }
-        set { self.setPropertyValue(newValue as? RecordValue, forKey: "dueDate") }
-    	
-    }
-    
     // If you know a property will always have a value, then you can
     // set its initial value, make it non-optional, and force the casting
     // of the object returned by the get and provided in the set.
@@ -240,13 +233,11 @@ chores.title = "Chores"
 
 let takeOutGarbage = Todo()
 takeOutGarbage.title = "Take out garbage"
-takeOutGarbage.dueDate = Date(timeInterval: (60 * 60), since: Date()) // Due in an hour
 takeOutGarbage.todoList = chores
 takeOutGarbage.assignee = me
 
 let walkTheDog = Todo()
 walkTheDog.title = "Walk the dog"
-walkTheDog.dueDate = Date(timeInterval: (60 * 60 * 2), since: Date()) // Due in two hours
 walkTheDog.todoList = chores
 walkTheDog.assignee = me
 
@@ -267,14 +258,12 @@ groceryList.asset = groceryListTextFile
 
 let buyGroceries = Todo()
 buyGroceries.title = "Buy groceries"
-buyGroceries.dueDate = Date(timeInterval: (60 * 60), since: Date()) // Due in an hour
 buyGroceries.todoList = errands
 buyGroceries.assignee = hubby
 buyGroceries.attachment = groceryList
 
 let pickUpDryCleaning = Todo()
 pickUpDryCleaning.title = "Pick up dry cleaning"
-pickUpDryCleaning.dueDate = Date(timeInterval: (60 * 60 + 60 * 30), since: Date()) // Due in an hour and a half
 pickUpDryCleaning.todoList = errands
 pickUpDryCleaning.assignee = hubby
 
