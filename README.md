@@ -29,7 +29,7 @@ Before installing and using Mist, ensure that your application is configured to 
 
 After [installing Mist](https://github.com/mmccroskey/Mist/blob/master/README.md#installation), you'll need to create your `Record` subclasses.
 
-#### Creating a Record Subclass
+#### Creating Record Subclasses
 
 All Mist operations are performed on instances of concrete subclasses of its abstract class `Record`. To use Mist, start by creating subclasses of `Record` for each Record Type in your app's CloudKit schema.
 
@@ -37,7 +37,8 @@ All Mist operations are performed on instances of concrete subclasses of its abs
 import Mist
 
 class Todo : Record {
-
+    
+    
     // MARK: - Initializers
     // All subclasses of Record must call Record's init, passing the subclass name	
     
@@ -86,6 +87,80 @@ class Todo : Record {
         get { return self.relatedRecord(forKey: "attachment") as? Attachment }
         set { self.setRelatedRecord(newValue, forKey: "attachment") }
     
+    }
+    
+    // Record has a parent property that's a real-relationship equivalent
+    // of CKRecord's parent CKReference property. You can use Record's parent
+    // directly in your code, or can wrap it in a custom property name 
+    // for convenience as we've done here.
+    var todoList: TodoList? {
+    
+        get { return self.parent as? TodoList }
+	set { self.parent = newValue }
+    
+    }
+    
+}
+
+
+class TodoList : Record {
+    
+    
+    // MARK: - Initializers
+    
+    init() { super.init(className: "TodoList") }
+    
+    
+    // MARK: - Properties
+    
+    var title: String? {
+    
+        get { return self.propertyValue(forKey: "title") as? String }
+        set { self.setPropertyValue(newValue as? RecordValue, forKey:"title") }
+    	
+    }
+    
+    
+    // MARK: - Relationships
+    
+    // Record has a read-only children property that automatically holds 
+    // all the Records that have this Record as their parent. You can 
+    // use Record's children property directly in your code, or you can
+    // wrap it in a custom property name for convenience as we've done here.
+    var todos: Set<Todo>? {
+        get { return self.children as? Set<Todo> }
+    }
+    
+}
+
+
+class Attachment : Record {
+    
+    
+    // MARK: - Initializers
+    
+    init() { super.init(className: "Attachment") }
+    
+    
+    // MARK: - Properties
+    
+    var title: String? {
+    
+        get { return self.propertyValue(forKey: "title") as? String }
+        set { self.setPropertyValue(newValue as? RecordValue, forKey:"title") }
+    	
+    }
+    
+    
+    // MARK: - Assets
+    // Mist has an Asset class that's equivalent to CloudKit's CKAsset, except that
+    // Mist automatically persists the assets locally so they're always available.
+    
+    var attachedFile: Asset? {
+        
+	get { return self.asset(forKey: "attachedFile") }
+	set { self.setAsset(forKey: "attachedFile") }
+	
     }
     
 }
