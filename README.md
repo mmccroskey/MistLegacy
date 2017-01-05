@@ -8,7 +8,7 @@ Mist is an adapter for CloudKit that supports local persistence, typed models wi
 
 ## Why Mist?
 
-Mist was created because **`CloudKit` is great, but it has some fundamental shortcomings**:
+Mist was created because **CloudKit is great, but it has some fundamental shortcomings**:
 
 * Although it allows you to powerfully sync records between cloud and device, it doesn't let you save them to a device once they've arrived;
 * Although is has a highly flexible approach to data modelling, that flexibility makes it very verbose and error-prone to use;
