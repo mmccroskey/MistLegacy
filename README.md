@@ -372,7 +372,7 @@ Sometimes you don't have RecordIDs, but you still need to access Records that ma
 
 ```swift
 
-Mist.find(recordsOfType: Todo, where: "completed = false", within: .public) { (syncSummary, recordOperationResult, todosIHaveToDo) in
+Mist.find(recordsOfType: Todo, where: { $0.completed == false }, within: .public) { (syncSummary, recordOperationResult, todosStillToDo) in
     
     // syncSummary indicates whether fetching from CloudKit worked;
     // syncSummary is nil by default, but has a value 
@@ -388,7 +388,7 @@ Mist.find(recordsOfType: Todo, where: "completed = false", within: .public) { (s
         fatalError("Local save failed due to error: \(recordOperationResult.error)")
     }
     
-    print("Here are the Todos you still have to do: \(todosIHaveToDo)")
+    print("Here are the Todos you & your husband still have to do: \(todosStillToDo)")
     
 }
 
@@ -398,7 +398,7 @@ Mist also provides a convenience version of the `find` function on `Record`, so 
 
 ```swift
 
-Todo.find(where: "completed = false", within: .public) { (recordOperationResult, todosIHaveToDo) in
+Todo.find(where: { $0.completed == false && $0.assignmee == me }, within: .public) { (recordOperationResult, todosINeedToDo) in
     
     // syncSummary indicates whether fetching from CloudKit worked;
     // syncSummary is nil by default, but has a value 
@@ -414,7 +414,34 @@ Todo.find(where: "completed = false", within: .public) { (recordOperationResult,
         fatalError("Local save failed due to error: \(recordOperationResult.error)")
     }
     
-    print("Here are the Todos you still have to do: \(todosIHaveToDo)")
+    print("Here are the Todos you still have to do: \(todosINeedToDo)")
+    
+}
+
+```
+
+If you prefer, you can also use `find` with an `NSPredicate` rather than a closure:
+
+```swift
+
+let iAmTheAssigneeAndTodoNotCompleted = NSPredicate(format: "assignee == %@ && completed == false", argumentArray: [me])
+Todo.find(where: iAmTheAssigneeAndTodoNotCompleted, within: .public) { (recordOperationresult, records) in
+    
+    // syncSummary indicates whether fetching from CloudKit worked;
+    // syncSummary is nil by default, but has a value 
+    // if automatic synchronization is enabled
+    if let syncSummary = syncSummary {
+        guard syncSummary.succeeded == true else {
+            fatalError("CloudKit sync failed: \(syncSummary)")
+        }
+    }
+
+    // recordOperationResult indicates whether fetching from the local cache worked
+    guard recordOperationResult.succeeded == true else {
+        fatalError("Local save failed due to error: \(recordOperationResult.error)")
+    }
+    
+    print("Here are the Todos you still have to do: \(todosINeedToDo)")
     
 }
 
