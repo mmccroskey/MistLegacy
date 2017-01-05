@@ -1,8 +1,22 @@
 # Mist
 
-Mist is a lightweight adapter for CloudKit that supports local persistence, typed models with true relationships, & automatic synchronization.
+Mist is an adapter for CloudKit that supports local persistence, typed models with true relationships, automatic synchronization, and a convention-over-configuration approach to enforcing best practices.
 
 *(TOC Goes Here)*
+
+---
+
+## Why Mist?
+
+Mist was created because **`CloudKit` is great, but it has some fundamental shortcomings**:
+
+* Although it allows you to powerfully sync records between cloud and device, it doesn't let you save them to a device once they've arrived;
+* Although is has a highly flexible approach to data modelling, that flexibility makes it very verbose and error-prone to use;
+* Although it has incredibly powerful features for synchroniziation, they're fairly arcane & completely opt-in.
+
+As stated in the repo description, Mist seeks to solve these problems by directly supporting **local persistence**, by requiring the use of **typed models with true relationships**, & by providing **automatic synchronization**. 
+
+Each of these components is explained in further detail in [How Mist Works](https://github.com/mmccroskey/Mist/blob/master/README.md#how-mist-works) below.
 
 ## Requirements
 - iOS 10.0+ / macOS 10.12+ / tvOS 10.0+ / watchOS 3.0+
@@ -23,7 +37,9 @@ Before installing and using Mist, ensure that your application is configured to 
 ### Manually
 #### Embedded Framework
 
-## Quick Start
+---
+
+## Usage
 
 ### Getting Set Up
 
@@ -319,7 +335,7 @@ Mist.add(todoLists, to: .public) { (recordOperationResult, syncSummary) in
 
 You use the `add` function whether you're saving new Records, or saving edits to existing Records.
 
-A quick side note: by default, saving a Record saves all the Records linked to it -- that is, the Records with which it has relationships OR which have relationships with it. Therefore, saving the TodoLists in the example above saves all the Todos we created, as well the new User (your husband) and even the Attachment we added to our "Buy groceries" Todo. This default behavior can be overridden via an optional property on the `add` function; see [Advanced Usage](https://github.com/mmccroskey/Mist/blob/master/README.md#advanced-usage) for more info.
+A quick side note: by default, saving a Record saves all the Records linked to it -- that is, the Records with which it has relationships. Therefore, saving the TodoLists in the example above saves all the Todos we created, as well the new User (your husband) and even the Attachment we added to our "Buy groceries" Todo. This default behavior can be overridden via an optional property on the `add` function; see [Advanced Usage](https://github.com/mmccroskey/Mist/blob/master/README.md#advanced-usage) for more info.
 
 #### Fetching Records
 
@@ -481,11 +497,25 @@ Mist.remove(todos, from: .public) { (recordOperationResult, syncSummary) in
 
 ```
 
-Just like with saving Records, deleting a Record deletes all the Records linked to it -- that is, the Records with which it has relationships OR which have relationships with it. Therefore, deleting the TodoLists in the example above deletes all the Todos we created, as well the new User (your husband) and even the Attachment we added to our "Buy groceries" Todo. This default behavior can be overridden via an optional property on the `delete` function; see [Advanced Usage](https://github.com/mmccroskey/Mist/blob/master/README.md#advanced-usage) for more info.
+When deleting a Record, deletes may or may not cascade to related Records. Just like with CloudKit's `CKReference`s, each relationship you create has a corresponding `RelationshipAction` -- either `deleteSelf` or `none` -- which is equivalent to `CKReference`'s `CKReferenceAction`.
 
-## How It Works
+### Configuration
 
-As stated in the repo description, Mist supports **local persistence**, **typed models with true relationships**, & **automatic synchronization**. Each is explained further below.
+Configuration info goes here.
+
+### Callbacks
+
+Callbacks info goes here.
+
+---
+
+### Advanced Usage
+
+Advanced usage info goes here.
+
+---
+
+### How Mist Works
 
 ### Local Persistence
 
