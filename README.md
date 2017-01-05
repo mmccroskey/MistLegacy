@@ -146,6 +146,70 @@ Todo.find(where: "completed = false", within: .public) { (recordOperationResult,
 
 ```
 
+##### Creating some new Todos & Saving Them
+
+###### CloudKit
+
+```swift
+
+let takeOutGarbageID = CKRecordID(recordName: UUID().uuidString)
+let takeOutGarbage = CKRecord(recordType: "Todo", recordID: takeOutGarbageID)
+takeOutGarbage["title"] = NSString(string: "Take out garbage")
+takeOutGarbage["dueDate"] = NSDate(timeInterval: (60 * 60), since: Date()) // Due in one hour
+
+let walkTheDogID = CKRecordID(recordName: UUID().uuidString)
+let walkTheDog = CKRecord(recordType: "Todo", recordID: walkTheDogID)
+walkTheDog["title"] = NSString(string: "Walk the dog")
+walkTheDog["dueDate"] = NSDate(timeInterval: (60 * 60 * 2), since: Date()) // Due in two hours
+
+let container = CKContainer.default()
+let publicDb = container.publicCloudDatabase
+
+let modifyRecordsOp = CKModifyRecordsOperation(recordsToSave: [takeOutGarbage, walkTheDog], recordIDsToDelete: nil)
+modifyRecordsOp.modifyRecordsCompletionBlock = { (modifiedRecords, deletedRecordIDs, error) in
+    
+    guard error == nil else {
+        fatalError("An error occurred while saving the Todo: \(error)")
+    }
+    
+    print("Todos saved successfully")
+    
+}
+
+publicDb.add(modifyRecordsOp)
+
+```
+
+###### Mist
+
+```swift
+
+let takeOutGarbage = Todo()
+takeOutGarbage.title = "Take out garbage"
+takeOutGarbage.dueDate = Date(timeInterval: (60 * 60), since: Date()) // Due in one hour
+
+let walkTheDog = Todo()
+walkTheDog.title = "Walk the dog"
+walkTheDog.dueDate = Date(timeInterval: (60 * 60 * 2), since: Date()) // Due in two hours
+
+let todos: Set<Todo> = [takeOutGarbage, walkTheDog]
+
+Mist.add(todos, to: .public) { (result, syncSummary) in
+
+    guard result.succeeded == true else {
+        fatalError("Local save failed due to error: \(result.error)")
+    }
+    
+    guard syncSummary.succeeded == true else {
+        fatalError("CloudKit sync failed: \(syncSummary)")
+    }
+    
+    print("Todos saved successfully")
+    
+}
+
+```
+
 Mist operates on instances of concrete subclasses of its abstract class `Record`. 
 
 To use Mist, start by creating subclasses of `Record` for each Record Type in your app's CloudKit schema.
