@@ -349,9 +349,9 @@ Mist.fetch(recordsWithIDs: idsOfHubbysTodos, from: .public) { (syncSummary, reco
     let pickUpDryCleaning = records.filter({ $0.title == "Pick up dry cleaning" })
     guard let buyGroceries = buyGroceries, let pickUpDryCleaning = pickUpDryCleaning else {
         
-	print("Some of your husband's Todos no longer exist! I wonder if he deleted them?")
-	return
-	
+        print("Some of your husband's Todos no longer exist! I wonder if he deleted them?")
+        return
+        
     }
     
     if buyGroceries.completed == true && pickUpDryCleaning.completed == true {
