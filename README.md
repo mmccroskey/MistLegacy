@@ -113,17 +113,6 @@ Here are some compare-and-contrast examples.
  performQuery()
 
 ```
-
-Let's break down what we're doing above:
-
-1. We get a pointer to the database on which we want to operate
-2. We create variables to hold the records we receive and the query cursor we might get
-3. We create a predicate that describes the "uncompleted" status of the Todos.
-4. We create a query that says we want to perform that predicate on the `Todo` type.
-5. We perform a query operation (`CKQueryOperation`, subclass of `CKOperation`) against our database and as part of that we:
-	1. Check for errors and potentially recursively call the query if we didn't get all the results the first time, and
-	2. Add each Record we receive to our `todosINeedToDo` array.
-6. We print the Todos that we received from CloudKit.
 	
 ###### Mist
 
@@ -141,14 +130,7 @@ Mist.find(recordsOfType: Todo, where: "completed = false", within: .public) { (r
 
 ```
 
-We call Mist's static `find` function, specifying:
-
-1. `recordsOfType`, the type of Records that interest us (where the value is always a subclass of `Record`),
-2. `where`, the condition(s) we want all returned Records to meet (a closure where the current Record is available as `$0`),
-3. `within`, the scope we want to search (a `StorageScope` (a Mist typealias of `CKDatabaseScope`)), AND
-4. A completion closure where we receive a `RecordOperationResult` indicating whether the search worked, and a `[Record]?` containing the Records if any were a match for the search criteria.
-
-Mist even provides a convenience functions on subclasses of `Record` so you can skip the `recordsOfType` parameter:
+Or even simpler:
 
 ```swift
 
