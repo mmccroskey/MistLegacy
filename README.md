@@ -359,7 +359,7 @@ Mist.fetch(recordsWithIDs: idsOfHubbysTodos, from: .public) { (syncSummary, reco
     } else if buyGroceries.completed == true || pickUpDryCleaning.completed == true {
         print("Your husband's still got work to do...")
     } else {
-        print("Hubby seems to have gotten sidetracked. Shocking.")
+        print("Hubby seems to have gotten sidetracked.")
     }
 
 }
