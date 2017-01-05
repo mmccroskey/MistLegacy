@@ -25,7 +25,7 @@ Before installing and using Mist, ensure that your application is configured to 
 
 ## Usage
 
-As stated in the repo description, Mist supports local persistence, typed models with true relationships, & automatic synchronization. Each is explained further below.
+As stated in the repo description, Mist supports **local persistence**, **typed models with true relationships**, & **automatic synchronization**. Each is explained further below.
 
 ### Local Persistence
 
@@ -45,13 +45,31 @@ Therefore, all Users share the same Public Database, but each User has her own P
 
 *(Graphic Goes Here)*
 
-Mist represents this single-User view of the Container via its local cache. The local cache contains one Public Storage Scope, one Private Storage Scope, and one Shared Storage Scope, all of which are tied to the currently authenticated User.
+Because a given device can only have one authenticated User at a time, Mist represents this single-User view of the Container via its local cache. The local cache contains one Public Storage Scope, one Private Storage Scope, and one Shared Storage Scope, all of which are tied to the currently authenticated User.
 
 #### Interacting with Data
 
-##### How CloudKit Does Data Interaction
+When using CloudKit directly, you interact with the data like so:
 
-CloudKit requires you to perform operations (`CKOperation`) on the Database that's of interest to you. For instance, to find all the Todos that are not yet completed, you would do the following:
+1. Create an Operation (`CKOperation`) that describes the action you want to perform (searching for records, creating/modifying records, or deleting records), 
+2. Set up asynchronous callback closures that handle the results of the operation, and
+3. Add the operation to the Database on which you want the action to be performed. 
+
+This results in a large amount of fairly repetitive, verbose, and error-prone code, especially since many of the Operations require other ancillary objects (`CKQuery`s for queries, for example).
+
+With Mist, interacting with data is simpler:
+
+1. Call the relevant static function (`Mist.find`, `Mist.add`, or `Mist.remove`), 
+2. Provide the relevant parameter (what you want to find, or the Records you want to create/modify/delete
+3. Specify where you want to find it (the `StorageScope` (`.public`, `.private`, or `.shared`)).
+
+All of this is done in a single line as parameters to the static function, and all results are handled in a single callback block.
+
+Here are some compare-and-contrast examples.
+
+##### Fetching Todos You Haven't Yet Completed
+
+###### CloudKit
 
 ```swift
 
@@ -107,9 +125,7 @@ Let's break down what we're doing above:
 	2. Add each Record we receive to our `todosINeedToDo` array.
 6. We print the Todos that we received from CloudKit.
 	
-##### How Mist Does Data Interaction
-
-By contrast, Mist is much simpler. It keeps the concept of indicating where you want to perform the search (the equivalent of performing the operation on the Public Database in the CloudKit example above), but greatly improves on the amount of boilerplate required:
+###### Mist
 
 ```swift
 
@@ -124,6 +140,13 @@ Mist.find(recordsOfType: Todo, where: "completed = false", within: .public) { (r
 }
 
 ```
+
+We call Mist's static `find` function, specifying:
+
+1. `recordsOfType`, the type of Records that interest us (where the value is always a subclass of `Record`),
+2. `where`, the condition(s) we want all returned Records to meet (a closure where the current Record is available as `$0`),
+3. `within`, the scope we want to search (a `StorageScope` (a Mist typealias of `CKDatabaseScope`)), AND
+4. A completion closure where we receive a `RecordOperationResult` indicating whether the search worked, and a `[Record]?` containing the Records if any were a match for the search criteria.
 
 Mist even provides a convenience functions on subclasses of `Record` so you can skip the `recordsOfType` parameter:
 
