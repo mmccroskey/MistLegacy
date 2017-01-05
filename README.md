@@ -181,7 +181,7 @@ Mist.fetch(recordsWithIDs: idsOfRecordsToFetch, from: .public) { (syncSummary, r
         fatalError("Local save failed due to error: \(recordOperationResult.error)")
     }
     
-    print("Here are the Records you requested: \(records")
+    print("Here are the Records you requested: \(records)")
 
 }
 
