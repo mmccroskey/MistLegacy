@@ -96,7 +96,7 @@ class Todo : Record {
     var todoList: TodoList? {
     
         get { return self.parent as? TodoList }
-	set { self.parent = newValue }
+        set { self.parent = newValue }
     
     }
     
@@ -158,8 +158,8 @@ class Attachment : Record {
     
     var attachedFile: Asset? {
         
-	get { return self.asset(forKey: "attachedFile") }
-	set { self.setAsset(forKey: "attachedFile") }
+        get { return self.asset(forKey: "attachedFile") }
+        set { self.setAsset(forKey: "attachedFile") }
 	
     }
     
