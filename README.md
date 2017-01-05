@@ -14,7 +14,7 @@ Mist was created because **CloudKit is great, but it has some fundamental shortc
 * Although it has a flexible approach to data modelling, that flexibility makes it verbose and error-prone to use;
 * Although it has incredible features for synchronization, they're arcane & opt-in rather than obvious & automatic.
 
-As stated in the repo description, Mist seeks to solve these problems by directly supporting **local persistence**, by requiring the use of **typed models with true relationships**, & by providing **automatic synchronization**. 
+Mist seeks to solve these problems by directly supporting **local persistence**, by requiring the use of **typed models with true relationships**, & by providing **automatic synchronization**. 
 
 Each of these components is explained in further detail in [How Mist Works](https://github.com/mmccroskey/Mist/blob/master/README.md#how-mist-works) below.
 
@@ -750,9 +750,13 @@ Todo.find(where: { $0.completed == false }, within: .public) { (recordOperationR
 
 ```
 
-## Advanced Usage
+## FAQs
+
+FAQs go here.
 
 ## Open Radars
+
+Open Radars go here.
 
 ## License
 Mist is released under the MIT license. See LICENSE for details.
