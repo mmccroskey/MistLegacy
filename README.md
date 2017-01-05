@@ -545,12 +545,10 @@ When using CloudKit directly, you interact with the data like so:
 2. Set up asynchronous callback closures that handle the results of the operation, and
 3. Add the operation to the Database on which you want the action to be performed. 
 
-This results in a large amount of fairly repetitive, verbose, and error-prone code, especially since many of the Operations require other ancillary objects (`CKQuery`s for queries, for example).
+Mist takes a similar, but more compact and straightforward approach:
 
-With Mist, interacting with data is simpler:
-
-1. Call the relevant static function (`Mist.find`, `Mist.add`, or `Mist.remove`), 
-2. Provide the relevant parameter (what you want to find, or the Records you want to create/modify/delete
+1. Call the relevant static function (`Mist.fetch`, `Mist.find`, `Mist.add`, or `Mist.remove`), 
+2. Provide the relevant parameter (what you want to fetch/find, or the Records you want to create/modify/delete)
 3. Specify where you want to find it (the `StorageScope` (`.public`, `.private`, or `.shared`)).
 
 All of this is done in a single line as parameters to the static function, and all results are handled in a single callback block.
