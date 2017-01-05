@@ -481,6 +481,8 @@ Mist.remove(todos, from: .public) { (recordOperationResult, syncSummary) in
 
 ```
 
+Just like with saving Records, deleting a Record deletes all the Records linked to it -- that is, the Records with which it has relationships OR which have relationships with it. Therefore, deleting the TodoLists in the example above deletes all the Todos we created, as well the new User (your husband) and even the Attachment we added to our "Buy groceries" Todo. This default behavior can be overridden via an optional property on the `delete` function; see [Advanced Usage](https://github.com/mmccroskey/Mist/blob/master/README.md#advanced-usage) for more info.
+
 ## How It Works
 
 As stated in the repo description, Mist supports **local persistence**, **typed models with true relationships**, & **automatic synchronization**. Each is explained further below.
