@@ -563,13 +563,11 @@ Here are some compare-and-contrast examples.
 
 let takeOutGarbageID = CKRecordID(recordName: UUID().uuidString)
 let takeOutGarbage = CKRecord(recordType: "Todo", recordID: takeOutGarbageID)
-takeOutGarbage["title"] = NSString(string: "Take out garbage")
-takeOutGarbage["dueDate"] = NSDate(timeInterval: (60 * 60), since: Date()) // Due in one hour
+takeOutGarbage["title"] = NSString(string: "Take out garbage") // CKRecordValue requires that we use NSString, not String
 
 let walkTheDogID = CKRecordID(recordName: UUID().uuidString)
 let walkTheDog = CKRecord(recordType: "Todo", recordID: walkTheDogID)
 walkTheDog["title"] = NSString(string: "Walk the dog")
-walkTheDog["dueDate"] = NSDate(timeInterval: (60 * 60 * 2), since: Date()) // Due in two hours
 
 let container = CKContainer.default()
 let publicDb = container.publicCloudDatabase
@@ -594,12 +592,10 @@ publicDb.add(modifyRecordsOp)
 ```swift
 
 let takeOutGarbage = Todo()
-takeOutGarbage.title = "Take out garbage"
-takeOutGarbage.dueDate = Date(timeInterval: (60 * 60), since: Date()) // Due in one hour
+takeOutGarbage.title = "Take out garbage" // Mist allows us to use the String directly, not NSString like above
 
 let walkTheDog = Todo()
 walkTheDog.title = "Walk the dog"
-walkTheDog.dueDate = Date(timeInterval: (60 * 60 * 2), since: Date()) // Due in two hours
 
 let todos: Set<Todo> = [takeOutGarbage, walkTheDog]
 
@@ -687,7 +683,7 @@ Mist.remove(todos, from: .public) { (result, syncSummary) in
  var todosINeedToDo: Set<CKRecord> = []
  var queryCursor: CKQueryCursor? = nil
  
- let queryPredicate = NSPredicate(format: "completed = false")
+ let queryPredicate = NSPredicate(format: "completed == false")
  let query = CKQuery(recordType: "Todo", predicate: queryPredicate)
  
  func performQuery() {
@@ -726,7 +722,7 @@ Mist.remove(todos, from: .public) { (result, syncSummary) in
 
 ```swift
 
-Mist.find(recordsOfType: Todo, where: "completed = false", within: .public) { (recordOperationResult, todosIHaveToDo) in
+Mist.find(recordsOfType: Todo, where: { $0.completed == false }, within: .public) { (recordOperationResult, todosIHaveToDo) in
     
     guard recordOperationResult.succeeded == true else {
         fatalError("Find operation failed due to error: \(recordOperation.error)")
@@ -742,7 +738,7 @@ Or even simpler:
 
 ```swift
 
-Todo.find(where: "completed = false", within: .public) { (recordOperationResult, todosIHaveToDo) in
+Todo.find(where: { $0.completed == false }, within: .public) { (recordOperationResult, todosIHaveToDo) in
     
     guard recordOperationResult.succeeded == true else {
         fatalError("Find operation failed due to error: \(recordOperation.error)")
