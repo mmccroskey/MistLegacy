@@ -16,7 +16,7 @@ Mist was created because **CloudKit is great, but it has some fundamental shortc
 
 Mist seeks to solve these problems by directly supporting **local persistence**, by requiring the use of **typed models with true relationships**, & by providing **automatic synchronization**. 
 
-To start using Mist, jump to [Usage](https://github.com/mmccroskey/Mist/blob/master/README.md#usage), or to learn more about how Mist is implemented, see [How Mist Works](https://github.com/mmccroskey/Mist/blob/master/README.md#how-mist-works).
+To start using Mist, jump to [Usage](https://github.com/mmccroskey/Mist/blob/master/README.md#usage), or to learn more about how Mist is implemented, see [Mist's Architecture Explained](https://github.com/mmccroskey/Mist/blob/master/README.md#mists-architecture-explained).
 
 ## Requirements
 - iOS 10.0+ / macOS 10.12+ / tvOS 10.0+ / watchOS 3.0+
@@ -24,7 +24,7 @@ To start using Mist, jump to [Usage](https://github.com/mmccroskey/Mist/blob/mas
 - Swift 3.0+
 
 ## Communication
-- If you **found a bug**, [open an issue](https://github.com/mmccroskey/Mist/issues/new).
+- If you have **found a bug**, [open an issue](https://github.com/mmccroskey/Mist/issues/new).
 - If you **have a feature request**, [open an issue](https://github.com/mmccroskey/Mist/issues/new).
 - If you **want to contribute**, [submit a pull request](https://github.com/mmccroskey/Mist/pulls/new).
 
@@ -515,7 +515,7 @@ Advanced usage info goes here.
 
 ---
 
-### How Mist Works
+### Mist's Architecture Explained
 
 ### Local Persistence
 
@@ -754,7 +754,7 @@ Todo.find(where: { $0.completed == false }, within: .public) { (recordOperationR
 
 #### The Problems CloudKit Creates
 
-CloudKit is all about storing Records, so it's no surprise that `CKRecord` lies at the core of its implementation. Like CloudKit as a whole, `CKRecord` is intentionally designed to be flexible, and so it acts as a highly mutable container for content: `CKRecord`'s property names and even its type (`recordType`) are all defined as Strings, and all properties of `CKRecord` are optional. While this certainly makes things flexible, it has a very significant downside -- it's all too easy to make careless typos when developing with `CKRecord`, and since these typos occur in raw Strings, they'll never be caught by the compiler and thus will likely result in subtle and hard-to-notice runtime errors. It also means that you may end up writing lots of code to ensure that certain properties always have a value, since CloudKit won't enforce that for you.
+CloudKit is all about storing Records, so it's no surprise that `CKRecord` lies at the core of its implementation. Like CloudKit as a whole, `CKRecord` is intentionally designed to be flexible, and so it acts as a highly mutable container for content: `CKRecord`'s property names, its identifier (`CKRecordID`), and even its type (`recordType`) are all defined as or ultimately backed by Strings, and all properties of `CKRecord` are optional. While this certainly makes things flexible, it has a very significant downside -- it's all too easy to make careless typos when developing with `CKRecord`, and since these typos occur in raw Strings, they'll never be caught by the compiler and thus will likely result in subtle and hard-to-notice runtime errors. It also means that you may end up writing lots of code to ensure that certain properties always have a value, and that that value is of a certain Type, since CloudKit won't enforce that for you.
 
 CloudKit also supports a just-in-time schema in development, meaning that you can create your app's schema simply by submitting objects to CloudKit that match it. Again, this makes things very flexible, but has the downside that a simple typo (e.g. listing a `CKRecord`'s `recordType` as `"Todos"` in one part of your code, but as `"Todo"` in another) can cause you to have a different schema than you intended, and leave you with data distributed in bizarre ways across your Container. And besides, most developers settle on a schema for the app quite early on in development, and then don't change it unless they're already making other major changes to their codebase (e.g. as part of making a major new version of their app).
 
@@ -768,12 +768,10 @@ Mist seeks to solves all these problems through its abstract class `Record`, and
 
 `CKRecord` is intended to be used directly, and cannot be subclassed. This means that you're forced to interact with every `CKRecord` instance using tons of raw Strings (for property name and `recordType` values) and to write tons of repetitive code to ensure that a certain property's value is of the type you expect, among other disadvantages.
 
-By contrast, `Record` is an abstract class and therefore must be subclassed to be used. Every `Record` subclass follows a few simple conventions, and by following these conventions, you get all the advantages you would get with a traditional Swift class. Every `Record` subclass must do all of the following:
+By contrast, `Record` is an abstract class and therefore must be subclassed to be used. Every `Record` subclass follows a couple of simple conventions, and by following these conventions, you get all the advantages you would get with a traditional Swift class. Every `Record` subclass must:
 
 1. Implement an `init` function that calls `Record`'s `init(recordTypeName:String)` function, and passes in the name of the Record Type from your CloudKit Container that this subclass represents
-2. Implement all "raw" properties as computed properties, calling `propertyValue(forKey:String)` within the property's `get` pseudo-function and `setPropertyValue(RecordValue?, forKey:String)` within its `set` pseudo-function
-3. Implement all relationships as computed properties, calling `relatedRecord(forKey:String)` within the property's `get` pseudo-function and `setRelatedRecord(Record?, forKey:String)` within its `set` pseudo-function
-4. Implement all assets as computed properties of type `Asset`, calling `asset(forKey:String)` within the property's `get` pseudo-function and `setAsset(Asset?, forKey:String)` within its `set` pseudo-function
+2. Implement all "raw" properties, relationships, and related Assets as computed properties, calling `Record`s respective backing functions within each property's `get` & `set` pseudo-functions
 
 Here's the rationale for each of these rules.
 
@@ -781,21 +779,27 @@ Here's the rationale for each of these rules.
 
 By requiring that every subclass of `Record` call `Record`s `init` function and provide a `recordTypeName`, Mist removes the need to provide `typeName` every time you create a Record instance, while still allowing you to decouple the name of the subclass from the name of its respective Record Type in CloudKit. This is particularly useful if you want to follow the typical database vs. ORM convention where database tables (equivalent to Record Types) have plural names (`Users`, `Todos`, etc.), while ORM Models (equivalent to `Record` subclasses) have singular names (`User`, `Todo`, etc.). Whether you choose to follow this convention is up to you.
 
-###### "Raw" properties as computed properties
+###### Using computed properties
 
-By implementing "raw" properties (Strings, Dates, etc., but not custom CloudKit types like References and Assets) as computed properties, Mist allows you to get and set the values of your properties in a way that's ultimately compatible with the `CKRecord` that stores them, while also giving you all the advantages of a proper Swift property. In particular, these properties:
+By implementing "raw" properties, relationships, and Assets as computed properties, Mist allows you to get and set the values of your properties in a way that's ultimately compatible with the `CKRecord` that stores them, while also giving you all the advantages of a proper Swift property. In particular, these properties:
 
 - Have names that Xcode can auto-complete, and can check for correctness at compile time
 - Have types that Swift can enforce in both directions, so that you can only set values on that property that make sense, and so that you don't have to check the type of a property's value every time you want use it
 - Have explicit nullability, so that if you know a particular property will always have a value (for instance, a boolean flag), you can set it up as such and then you never have to check to see whether it's nil
 
-###### "Raw" properties as computed properties
+And in the case of relationships and Assets, you get additional advantages. With relationships, you're able to directly relate two `Record`s together (something you cannot do with `CKRecord`), and then when you fetch the parent Record, you'll get the related Record automatically without another fetch by default. With assets, you're able to access the asset immediately, since Mist guarantees that it remains cached on the device as long as its respective Record is locally cached.
+
+##### Other Advantages of Using `Record`
 
 ##### Identifiers
 
 CloudKit requires that the unique identifiers for `CKRecord`s (instances of `CKRecordID`) must be unique to each Record within a given Object Type. However, CloudKit does nothing to enforce this, since the `recordName` property of `CKRecordID` can be any String, and thus could be repeated across `CKRecord` instances.
 
 By contrast, Mist's `Record` has an `id` property, which is an instance of `RecordID` (a typealias of `String`) and is read-only; at initialization time, it automatically gets set to a globally-unique value using `NSUUID`.
+
+##### Record Zones
+
+Although it's not very well documented, proper use of Record Zones is critical to enabling efficient synchronization of objects between CloudKit and the local device. In particular, custom record zones cannot be used at all in the public database, but they must be used in the private and shared databases in order 
 
 ##### Properties
 
