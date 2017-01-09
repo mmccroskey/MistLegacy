@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CloudKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -50,7 +51,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillTerminate(_ application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
+    
+    func application(_ application: UIApplication,
+                     didReceiveRemoteNotification userInfo: [NSObject : AnyObject],
+                     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        
+        do {
+            
+            try Mist.handleNotification(withUserInfo: userInfo, fetchCompletionHandler: completionHandler)
+            
+        } catch {
+            
+            print("Notification was not a CloudKit notification: \(userInfo)")
+            
+        }
+        
+    }
 
 
 }
-
