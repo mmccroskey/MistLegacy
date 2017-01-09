@@ -8,7 +8,7 @@
 
 import Foundation
 import CloudKit
-
+import UIKit
 
 typealias StorageScope = CKDatabaseScope
 typealias RecordIdentifier = String
@@ -19,8 +19,6 @@ typealias SortClosure = ((Record,Record) throws -> Bool)
 
 
 struct Configuration {
-    
-    var syncsAutomatically: Bool
     
     var `public`: Scoped
     var `private`: Scoped
@@ -40,6 +38,14 @@ struct RecordDescriptor {
     
 }
 
+enum NotificationHandlingError : Error {
+    
+    case dictionaryInproperlyFormed
+    case noSubscriptionID
+    case unsupportedNotificationType
+    
+}
+
 
 class Mist {
     
@@ -47,7 +53,6 @@ class Mist {
     // MARK: - Configuration Properties
     
     static var config: Configuration = Configuration(
-        syncsAutomatically: true,
         public: Configuration.Scoped(pullsRecordsMatchingDescriptors: nil),
         private: Configuration.Scoped(pullsRecordsMatchingDescriptors: nil)
     )
@@ -56,6 +61,18 @@ class Mist {
     // MARK: - Public Properties
     
     static private(set) var currentUser: CloudKitUser? = nil
+    static private(set) var automaticSyncEnabled: Bool = false
+    
+    
+    // MARK: - Synchronization Settings
+    
+    static func enableAutomaticSync(_ completion:((RecordOperationResult, SyncSetupSummary?) -> Void)) {
+        self.adjustAutomaticSync(true, completion: completion)
+    }
+    
+    static func disableAutomaticSync(_ completion:((RecordOperationResult, SyncSetupSummary?) -> Void)) {
+        self.adjustAutomaticSync(false, completion: completion)
+    }
     
     
     // MARK: - Fetching Items
@@ -162,6 +179,53 @@ class Mist {
         
     }
     
+    // MARK: - Handling Notifications
+    
+    static func handleNotification(withUserInfo userInfo: [NSObject : AnyObject], fetchCompletionHandler completionHandler: ((UIBackgroundFetchResult) -> Void)) throws {
+        
+        guard let dict = userInfo as? [String : NSObject] else {
+            throw NotificationHandlingError.dictionaryInproperlyFormed
+        }
+        
+        let notification = CKNotification(fromRemoteNotificationDictionary: dict)
+        
+        guard let subscriptionID = notification.subscriptionID else {
+            throw NotificationHandlingError.noSubscriptionID
+        }
+        
+        let currentUserCache = self.singleton.localDataCoordinator.currentUserCache
+        let publicCache = currentUserCache.publicCache
+        let privateCache = currentUserCache.privateCache
+        let sharedCache = currentUserCache.sharedCache
+        
+        switch notification.notificationType {
+            
+        case .readNotification, .recordZone:
+            throw NotificationHandlingError.unsupportedNotificationType
+            
+        case .database:
+            
+            if subscriptionID == "private" {
+                
+                privateCache.handleNotification()
+                
+            } else if subscriptionID == "shared" {
+             
+                sharedCache.handleNotification()
+                
+            } else {
+                
+                fatalError("The subscriptionID for a database subscription should only ever be of the values 'private' or 'shared', but this one has the value \(subscriptionID)")
+                
+            }
+            
+        case .query:
+            publicCache.handleNotification()
+            
+        }
+        
+    }
+    
     
     // MARK: - Internal Properties
     
@@ -256,6 +320,139 @@ class Mist {
     
     // MARK: - Private Functions
     
+    private static func adjustAutomaticSync(_ enableSync:Bool, completion:((RecordOperationResult, SyncSetupSummary?) -> Void)) {
+        
+        self.refreshAutomaticSyncConfiguration(enableSync) { (recordOperationResult, syncSetupSummary) in
+            
+            if recordOperationResult.succeeded == true, let syncSetupSummary = syncSetupSummary, syncSetupSummary.result == .success {
+                self.automaticSyncEnabled = enableSync
+            }
+            
+            completion(recordOperationResult, syncSetupSummary)
+            
+        }
+        
+    }
+    
+    private static func refreshAutomaticSyncConfiguration(_ syncAutomatically:Bool, completion:((RecordOperationResult, SyncSetupSummary?) -> Void)) {
+        
+        self.singleton.cacheInteractionQueue.addOperation {
+            
+            self.singleton.checkCurrentUserStatus { (userExists) in
+                
+                guard userExists else {
+                    
+                    completion(RecordOperationResult(succeeded: false, error: self.singleton.noCurrentUserError.errorObject()), nil)
+                    return
+                    
+                }
+                
+                let currentUserCache = self.singleton.localDataCoordinator.currentUserCache
+                let publicCache = currentUserCache.publicCache
+                let privateCache = currentUserCache.privateCache
+                let sharedCache = currentUserCache.sharedCache
+                
+                let successfulRecordOperation = RecordOperationResult(succeeded: true, error: nil)
+                
+                publicCache.adjustQuerySubscriptions(syncAutomatically, completion: { (publicError) in
+                    
+                    if let publicError = publicError {
+                        
+                        completion(
+                            successfulRecordOperation,
+                            SyncSetupSummary(
+                                result: .totalFailure,
+                                errors: [publicError],
+                                publicSyncSetupSummary: ScopedSyncSetupSummary(result: .totalFailure, errors: [publicError]),
+                                privateSyncSetupSummary: ScopedSyncSetupSummary(result: .totalFailure, errors: []),
+                                sharedSyncSetupSummary: ScopedSyncSetupSummary(result: .totalFailure, errors: [])
+                            )
+                        )
+                        
+                    } else {
+                        
+                        guard Mist.currentUser != nil else {
+                            
+                            let noCurrentUserError = self.singleton.noCurrentUserError.errorObject()
+                            
+                            completion(
+                                successfulRecordOperation,
+                                SyncSetupSummary(
+                                    result: .totalFailure,
+                                    errors: [noCurrentUserError],
+                                    publicSyncSetupSummary: ScopedSyncSetupSummary(result: .totalFailure, errors: [noCurrentUserError]),
+                                    privateSyncSetupSummary: ScopedSyncSetupSummary(result: .totalFailure, errors: []),
+                                    sharedSyncSetupSummary: ScopedSyncSetupSummary(result: .totalFailure, errors: [])
+                                )
+                            )
+                            
+                            return
+                            
+                        }
+                        
+                        privateCache.adjustDatabaseSubscription(syncAutomatically, completion: { (privateError) in
+                            
+                            if let privateError = privateError {
+                                
+                                completion(
+                                    successfulRecordOperation,
+                                    SyncSetupSummary(
+                                        result: .partialFailure,
+                                        errors: [privateError],
+                                        publicSyncSetupSummary: ScopedSyncSetupSummary(result: .success, errors: []),
+                                        privateSyncSetupSummary: ScopedSyncSetupSummary(result: .totalFailure, errors: [privateError]),
+                                        sharedSyncSetupSummary: ScopedSyncSetupSummary(result: .totalFailure, errors: [])
+                                    )
+                                )
+                                
+                            } else {
+                                
+                                sharedCache.adjustDatabaseSubscription(syncAutomatically, completion: { (sharedError) in
+                                    
+                                    if let sharedError = sharedError {
+                                        
+                                        completion(
+                                            successfulRecordOperation,
+                                            SyncSetupSummary(
+                                                result: .partialFailure,
+                                                errors: [sharedError],
+                                                publicSyncSetupSummary: ScopedSyncSetupSummary(result: .success, errors: []),
+                                                privateSyncSetupSummary: ScopedSyncSetupSummary(result: .success, errors: []),
+                                                sharedSyncSetupSummary: ScopedSyncSetupSummary(result: .totalFailure, errors: [sharedError])
+                                            )
+                                        )
+                                        
+                                    } else {
+                                        
+                                        completion(
+                                            successfulRecordOperation,
+                                            SyncSetupSummary(
+                                                result: .success,
+                                                errors: [],
+                                                publicSyncSetupSummary: ScopedSyncSetupSummary(result: .success, errors: []),
+                                                privateSyncSetupSummary: ScopedSyncSetupSummary(result: .success, errors: []),
+                                                sharedSyncSetupSummary: ScopedSyncSetupSummary(result: .success, errors: [])
+                                            )
+                                        )
+                                        
+                                    }
+                                    
+                                })
+                                
+                            }
+                            
+                        })
+                        
+                    }
+                    
+                })
+                
+            }
+            
+        }
+        
+    }
+    
     private static func performUserGuardedOperation(_ operation:(() -> Void), pushScope:StorageScope?=nil, finished:((RecordOperationResult, DirectionalSyncSummary?) -> Void)?) {
         
         Mist.singleton.cacheInteractionQueue.addOperation {
@@ -276,7 +473,7 @@ class Mist {
                 
                 operation()
                 
-                if Mist.config.syncsAutomatically == true, let pushScope = pushScope {
+                if Mist.automaticSyncEnabled == true, let pushScope = pushScope {
                     
                     self.singleton.remoteDataCoordinator.performDatabasePush(for: pushScope, completed: { (directionalSyncSummary) in
                         

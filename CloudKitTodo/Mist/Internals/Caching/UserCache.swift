@@ -23,8 +23,8 @@ class UserCache {
     let userIdentifier: RecordIdentifier
     
     let publicCache = PublicCache()
-    let privateCache = NonPublicCache()
-    let sharedCache = NonPublicCache()
+    let privateCache = NonPublicCache(scope: .private)
+    let sharedCache = NonPublicCache(scope: .shared)
     
     
     // MARK: - Functions

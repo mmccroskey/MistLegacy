@@ -12,6 +12,13 @@ import CloudKit
 internal class PublicCache: ScopedCache {
     
     
+    // MARK: - Initializers
+    
+    init() {
+        super.init(scope: .public)
+    }
+    
+    
     // MARK: - Public Functions
     
     override func addCachedRecord(_ record:Record) {
@@ -43,6 +50,98 @@ internal class PublicCache: ScopedCache {
         
         self.removeRecordsFromLocallyCreatedRecords(recordsToDelete)
         super.removeCachedRecordsWithIdentifiers(identifiers)
+        
+    }
+    
+    internal func handleNotification() {
+        
+        var modifiedNotifications: [CKNotification] = []
+        
+        func executeNotificationChangesOperation(withChangeToken previousServerChangeToken: CKServerChangeToken?=nil) {
+            
+            let changesOperation = CKFetchNotificationChangesOperation(previousServerChangeToken: previousServerChangeToken)
+            changesOperation.notificationChangedBlock = { modifiedNotifications.append($0) }
+            changesOperation.fetchNotificationChangesCompletionBlock = { (serverChangeToken, error) in
+                
+                guard error == nil else {
+                    fatalError("An error occurred while fetching notification changes: \(error)")
+                }
+                
+                if let serverChangeToken = serverChangeToken {
+                    
+                    executeNotificationChangesOperation(withChangeToken: serverChangeToken)
+                    
+                } else {
+                    
+                    var idsOfModifiedRecords: [CKRecordID] = []
+                    
+                    for modifiedNotification in modifiedNotifications {
+                        
+                        guard let queryNotification = modifiedNotification as? CKQueryNotification else {
+                            fatalError("All notification objects associated with the public database should be query notifications.")
+                        }
+                        
+                        guard let recordId = queryNotification.recordID else {
+                            fatalError("A non-pruned query notification should always have a recordID.")
+                        }
+                        
+                        switch queryNotification.queryNotificationReason {
+                            
+                        case .recordCreated, .recordUpdated:
+                            idsOfModifiedRecords.append(recordId)
+                            
+                        case .recordDeleted:
+                            self.removeCachedRecordWithIdentifier(recordId.recordName)
+                            
+                        }
+                        
+                    }
+                    
+                    let fetchOperation = CKFetchRecordsOperation(recordIDs: idsOfModifiedRecords)
+                    fetchOperation.fetchRecordsCompletionBlock = { (recordIdRecordPairs, error) in
+                        
+                        guard let recordIdRecordPairs = recordIdRecordPairs, error == nil else {
+                            fatalError("Fetching of updated records failed due to error: \(error)")
+                        }
+                        
+                        for recordIdRecordPair in recordIdRecordPairs {
+                            
+                            let ckRecord = recordIdRecordPair.value
+                            let recordType = ckRecord.recordType
+                            
+                            let mistRecord = Record(className: recordType, backingRemoteRecord: ckRecord)
+                            super.addCachedRecord(mistRecord)
+                            
+                        }
+                        
+                    }
+                    
+                }
+                
+            }
+            
+        }
+        
+        executeNotificationChangesOperation()
+        
+    }
+    
+    
+    // MARK: - Internal Functions
+    
+    internal func adjustQuerySubscriptions(_ automaticSyncEnabled:Bool, completion:((Error?) -> Void)) {
+        
+        if automaticSyncEnabled == true {
+            
+            let existingQuerySubscriptions = self.querySubscriptionsForLocallyCreatedRecordsByRecordType.values.map({ $0 }) as [CKQuerySubscription]
+            self.modifySubscriptions(existingQuerySubscriptions, idsOfSubscriptionsToDelete: nil, completion: completion)
+            
+        } else {
+            
+            let idsOfExistingSubscriptions = self.querySubscriptionsForLocallyCreatedRecordsByRecordType.values.map({ $0.subscriptionID }) as [String]
+            self.modifySubscriptions(nil, idsOfSubscriptionsToDelete: idsOfExistingSubscriptions, completion: completion)
+            
+        }
         
     }
     
@@ -128,9 +227,12 @@ internal class PublicCache: ScopedCache {
                 let recordIdsForRecordTypeStringArray: [String] = recordIdsForRecordType.map({ (recordId) -> String in return recordId as String })
                 
                 let predicate = NSPredicate(format: "recordID.recordName IN %@", recordIdsForRecordTypeStringArray)
-                let subscriptionId = UUID().uuidString
                 let subscriptionOptions: CKQuerySubscriptionOptions = [.firesOnRecordCreation, .firesOnRecordDeletion, .firesOnRecordUpdate]
-                let querySubscription = CKQuerySubscription(recordType: recordTypeString, predicate: predicate, subscriptionID: subscriptionId, options: subscriptionOptions)
+                let querySubscription = CKQuerySubscription(recordType: recordTypeString, predicate: predicate, subscriptionID: recordTypeString, options: subscriptionOptions)
+                
+                let notificationInfo = CKNotificationInfo()
+                notificationInfo.shouldSendContentAvailable = true
+                querySubscription.notificationInfo = notificationInfo
                 
                 querySubscriptionsToAdd.append(querySubscription)
                 self.querySubscriptionsForLocallyCreatedRecordsByRecordType[recordTypeString] = querySubscription
@@ -144,17 +246,14 @@ internal class PublicCache: ScopedCache {
             
         }
         
-        let modifySubsOp = CKModifySubscriptionsOperation(subscriptionsToSave: querySubscriptionsToAdd, subscriptionIDsToDelete: idsOfQuerySubscriptionsToDelete)
-        modifySubsOp.modifySubscriptionsCompletionBlock = { (addedSubscriptions, idsOfDeletedSubscriptions, error) in
+        self.modifySubscriptions(querySubscriptionsToAdd, idsOfSubscriptionsToDelete: idsOfQuerySubscriptionsToDelete, completion: { (error) in
             
+            // TODO: Handle this better
             guard error == nil else {
-                
-                // TODO: Handle this error better
-                fatalError("Failed to modify subscriptions due to error: \(error!)")
-                
+                fatalError("Subscriptions were not modified due to error \(error)")
             }
             
-        }
+        })
         
     }
     

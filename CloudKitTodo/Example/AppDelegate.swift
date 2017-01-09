@@ -46,6 +46,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             print("Here's the summary of the add: \n result: \(result) \n\n syncSummary: \(syncSummary)")
         }
         
+        guard let me = Mist.currentUser else {
+            fatalError()
+        }
+        
+        let iAmTheAssignee = NSPredicate(format: "assignee == %@", argumentArray: [me])
+        Todo.find(where: iAmTheAssignee, within: .public) { (recordOperationresult, records) in
+            
+            
+            
+        }
+        
+        
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

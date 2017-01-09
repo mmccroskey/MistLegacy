@@ -15,6 +15,24 @@ struct RecordOperationResult {
     
 }
 
+struct SyncSetupSummary {
+    
+    let result: SyncResult
+    let errors: [Error]
+    
+    let publicSyncSetupSummary: ScopedSyncSetupSummary
+    let privateSyncSetupSummary: ScopedSyncSetupSummary
+    let sharedSyncSetupSummary: ScopedSyncSetupSummary
+    
+}
+
+struct ScopedSyncSetupSummary {
+    
+    let result: SyncResult
+    let errors: [Error]
+    
+}
+
 enum SyncResult {
     case success
     case partialFailure

@@ -101,7 +101,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
             fatalError("Only non-public caches support the storage of server change tokens.")
         }
         
-        if let extantChangeToken = scopedCache.scopeChangeToken {
+        if let extantChangeToken = scopedCache.databaseChangeToken {
             retrievalCompleted(extantChangeToken)
         } else {
             retrievalCompleted(nil)
@@ -115,7 +115,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
             fatalError("Only non-public caches support the storage of server change tokens.")
         }
         
-        scopedCache.scopeChangeToken = changeToken
+        scopedCache.databaseChangeToken = changeToken
         
     }
     
