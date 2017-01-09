@@ -175,13 +175,14 @@ class Record: Hashable {
         return self.relatedRecordsCache[key]
     }
     
-    func setRelatedRecord(_ relatedRecord:Record?, forKey key:String, withRelationshipDeleteBehavior behavior:RelationshipDeleteBehavior) {
+    func setRelatedRecord(_ relatedRecord:Record?, forKey key:String, withRelationshipDeleteBehavior behavior:RelationshipDeleteBehavior? = nil) {
         
         func configureReference() {
             
             if let relatedRecord = relatedRecord {
                 
-                let newReference = CKReference(record: relatedRecord.backingRemoteRecord, action: behavior)
+                let relationshipBehavior = behavior ?? .none
+                let newReference = CKReference(record: relatedRecord.backingRemoteRecord, action: relationshipBehavior)
                 self.backingRemoteRecord.setObject(newReference, forKey: key)
                 
             } else {
