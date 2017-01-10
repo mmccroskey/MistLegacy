@@ -529,20 +529,20 @@ As described in the [CloudKit documentation](https://developer.apple.com/library
 
 *(Graphic Goes Here)*
 
-Therefore, all Users share the same Public Database, but each User has her own Private Database and her own Shared Database.
+Therefore, all Users share the same Public Database, but each User has her own Private Database and her own Shared Database. Anyone (whether or not she is authenticated) can read from the Public Database, but to read from the Private or Shared Databases or to write to any of the three Databases, the User must be authenticated.
 
 ##### How Mist Stores Data
 
 *(Graphic Goes Here)*
 
-Because a given device can only have one authenticated User at a time, Mist represents this single-User view of the Container via its local cache. The local cache contains one Public Storage Scope, one Private Storage Scope, and one Shared Storage Scope, all of which are tied to the currently authenticated User.
+Because a given device can only have one authenticated User at a time, Mist represents this single-User view of the Container via its local cache. The local cache contains one Public Storage Scope, one Private Storage Scope, and one Shared Storage Scope. The Public Storage Scope exists indpependently of whether a User is authenticated; the other two Scopes (Private and Shared) are tied to the currently authenticated User, meaning that each instance of Mist has U Private Scopes and U Shared Scopes, where U is the number of Users that have ever been authenticated on a particular Device. Mist allows you to interact with the Public Scope, and the Private and Shared Scopes for the current User if one exists.
 
 #### Interacting with Data
 
 When using CloudKit directly, you interact with the data like so:
 
-1. Create an Operation (`CKOperation`) that describes the action you want to perform (searching for records, creating/modifying records, or deleting records), 
-2. Set up asynchronous callback closures that handle the results of the operation, and
+1. Create an Operation (`CKOperation`) that describes the action you want to perform (searching for records, creating/modifying records, deleting records, etc.), 
+2. Set up asynchronous callback closures that handle each result of the operation and then the completion of the operation, and
 3. Add the operation to the Database on which you want the action to be performed. 
 
 Mist takes a similar, but more compact and straightforward approach:
@@ -799,27 +799,18 @@ By contrast, Mist's `Record` has an `id` property, which is an instance of `Reco
 
 ##### Record Zones
 
-Although it's not very well documented, proper use of Record Zones is critical to enabling efficient synchronization of objects between CloudKit and the local device. In particular, custom record zones cannot be used at all in the public database, but they must be used in the private and shared databases in order 
+Although it's not very well documented, proper use of Record Zones is critical to enabling efficient synchronization of objects between CloudKit and the local device. In particular, custom record zones cannot be used at all in the public database, but they must be used in the private and shared databases in order to be able to get efficient change sets for CloudKit updates.
 
-##### Properties
-
-`CKRecord` implements its properties with key-value coding, meaning that each `CKRecord` has an unknown number of properties, and that each of these properties is defined by a raw String and can hold a value of any type.
-
-By contrast, `Record` has a similar implementation, but requires 
-
-Feature | CloudKit (`CKRecord`) | Mist (`Record`)
---------|-----------------------|-----------------
-Identifiers | Allows you to set ID to any arbitrary String, even though IDs must be unique within an Object Type | Automatically gives every instance a unique ID using `NSUUID`
-Property Names | Uses key-value coding for properties, such that property names have to be typed as raw Strings each time they're used | Allows creation of actual Swift properties, so that Xcode can auto-complete property names and find typos at compile time
-Required Properties | All properties are optional and this can't be changed | Since properties are actual Swift properties, you can control whether they're required using Swift's native `?` syntax
-Property Types | All properties must conform to `CKRecordValue`, which is defined in Objective-C, and therefore erroneously doesn't allow the use of Swift Strings, nor Swift 3 structs like `Date` | All properties conform to equivalent but superior `RecordValue`, which allows Swift equivalents of Objective-C types
-Relationships | All relationships are defined using instances of `CKReference`, meaning that there's no compile-time enforcement of relationships
-
-
+Mist and `Record` work together to ensure that these best practices are followed. In the Private and Shared scopes, root records (`Record` instances that have no `parent` Record) get their own Record Zone, and all the children coming off of that Record are put in that same Record Zone (an implicit requirement of CloudKit). In the public scope, everything is put in the default Record Zone (since CloudKit doesn't allow custom Record Zones in the Public Scope) and alternative approaches are used to get efficient data synchronization.
 
 ### Automatic Synchronization
 
-Automatic Synchronization goes here.
+Synchroniziation is typically a three-step process: pulling down records from the server, reconciling them with what's on the device, and pushing new records back up to the server. This reconciliation process can sometimes be complex, but Mist takes a simple approach:
+
+1. Deletes win
+2. Latest edit wins
+
+
 
 ---
 
