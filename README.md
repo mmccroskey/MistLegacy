@@ -414,7 +414,7 @@ Mist also provides a convenience version of the `find` function on `Record`, so 
 
 ```swift
 
-Todo.find(where: { $0.completed == false && $0.assignmee == me }, within: .public) { (recordOperationResult, todosINeedToDo) in
+Todo.find(where: { $0.completed == false && $0.assignee == me }, within: .public) { (recordOperationResult, todosINeedToDo) in
     
     // syncSummary indicates whether fetching from CloudKit worked;
     // syncSummary is nil by default, but has a value 
