@@ -77,7 +77,7 @@ class Mist {
     
     // MARK: - Fetching Items
     
-    static func get(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, Record?) -> Void)) {
+    static func fetch(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, Record?) -> Void)) {
         
         var record: Record? = nil
         

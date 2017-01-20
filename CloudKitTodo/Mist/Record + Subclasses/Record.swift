@@ -24,8 +24,12 @@ class Record: Hashable {
     
     // MARK: - Static Convenience Functions
     
-    static func get(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, Record?) -> Void)) {
-        Mist.get(identifier, from: from, fetchDepth: fetchDepth, finished: finished)
+    static func fetch(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, Record?) -> Void)) {
+        Mist.fetch(identifier, from: from, fetchDepth: fetchDepth, finished: finished)
+    }
+    
+    static func fetch(_ identifiers:Set<RecordIdentifier>, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
+        Mist.fetch(identifiers, from: from, fetchDepth: fetchDepth, finished: finished)
     }
     
     static func find(where filter:FilterClosure, within:StorageScope, sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
