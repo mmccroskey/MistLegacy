@@ -90,6 +90,33 @@ class Mist {
         
     }
     
+    static func fetch(_ identifiers:Set<RecordIdentifier>, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
+        
+        var records: Set<Record> = []
+        
+        let operation = {
+            
+            for identifier in identifiers {
+                
+                if let record = self.singleton.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth) {
+                    records.insert(record)
+                }
+                
+            }
+        
+        }
+        
+        let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
+            
+            let recordsArray = Array(records)
+            finished(recordOperationResult, recordsArray)
+            
+        }
+        
+        self.performUserGuardedOperation(operation, finished: internalFinished)
+        
+    }
+    
     static func find(
         recordsOfType type:Record.Type?=nil, where filter:FilterClosure, within:StorageScope,
         sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
@@ -271,6 +298,10 @@ class Mist {
         var unpushedDeletions: [Record]? = nil
         
         let operation = {
+            
+            for recordZone in self.singleton.localDataCoordinator.currentUserCache.scopedCache(withScope: scope).recordZonesWithUnpushedChanges {
+                
+            }
             
             let unpushedChangeData = self.singleton.localDataCoordinator.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges.values
             unpushedChanges = unpushedChangeData.map({ $0 }) // Because Swift compiler is a dumbass

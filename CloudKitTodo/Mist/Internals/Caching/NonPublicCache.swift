@@ -69,43 +69,74 @@ internal class NonPublicCache: ScopedCache {
         var idsOfDeletedRecordZones: [CKRecordZoneID] = []
         var idsOfUpdatedRecordZones: [CKRecordZoneID] = []
         
-        func fetchDatabaseChangesOperation() {
+        let dbChangesOperation = CKFetchDatabaseChangesOperation(previousServerChangeToken: databaseChangeToken)
+        dbChangesOperation.fetchAllChanges = true
+        dbChangesOperation.changeTokenUpdatedBlock = { self.databaseChangeToken = $0 }
+        dbChangesOperation.recordZoneWithIDWasDeletedBlock = { idsOfDeletedRecordZones.append($0) }
+        dbChangesOperation.recordZoneWithIDChangedBlock = { idsOfUpdatedRecordZones.append($0) }
+        dbChangesOperation.fetchDatabaseChangesCompletionBlock = { (serverChangeToken, moreComing, error) in
             
-            let dbChangesOperation = CKFetchDatabaseChangesOperation(previousServerChangeToken: databaseChangeToken)
-            dbChangesOperation.fetchAllChanges = true
-            dbChangesOperation.changeTokenUpdatedBlock = { self.databaseChangeToken = $0 }
-            dbChangesOperation.recordZoneWithIDWasDeletedBlock = { idsOfDeletedRecordZones.append($0) }
-            dbChangesOperation.recordZoneWithIDChangedBlock = { idsOfUpdatedRecordZones.append($0) }
-            dbChangesOperation.fetchDatabaseChangesCompletionBlock = { (serverChangeToken, moreComing, error) in
+            guard error == nil else {
+                // TODO: Better error handling
+                fatalError("An error occurred while fetching database changes: \(error)")
+            }
+            
+            guard moreComing == false else {
+                fatalError("We specified that we wanted to fetch all changes, so moreComing should always be false.")
+            }
+            
+            self.databaseChangeToken = serverChangeToken
+            
+            for idOfDeletedRecordZone in idsOfDeletedRecordZones {
                 
-                guard moreComing == false else {
-                    fatalError("We specified that we wanted to fetch all changes, so moreComing should always be false.")
+                // TODO: Find all local Records in this Record Zone and delete them,
+                // ensuring that related records are also deleted
+                
+            }
+            
+            var recordIdentifiersOfDeletedRecords: Set<RecordIdentifier> = []
+            var modifiedRecords: [CKRecord] = []
+            
+            // TODO: Cache and pass per-record-zone change tokens here
+            let recordZoneChangesOperation = CKFetchRecordZoneChangesOperation(recordZoneIDs: idsOfUpdatedRecordZones, optionsByRecordZoneID: nil)
+            recordZoneChangesOperation.fetchAllChanges = true
+            recordZoneChangesOperation.recordWithIDWasDeletedBlock = { (recordId, string) in recordIdentifiersOfDeletedRecords.insert(recordId.recordName) }
+            recordZoneChangesOperation.recordChangedBlock = { modifiedRecords.append($0) }
+            recordZoneChangesOperation.fetchRecordZoneChangesCompletionBlock = { error in
+                
+                guard error == nil else {
+                    // TODO: Better error handling
+                    fatalError("An error occurred while fetching record zone changes: \(error)")
                 }
                 
-                self.databaseChangeToken = serverChangeToken
-                
-                if moreComing {
+                Mist.fetch(recordIdentifiersOfDeletedRecords, from: self.scope, finished: { (recordOperationResult, records) in
                     
-                    fetchDatabaseChangesOperation()
+                    guard recordOperationResult.succeeded == true else {
+                        fatalError("Could not fetch records due to record operation error: \(recordOperationResult.error!)")
+                    }
                     
-                } else {
-                    
-                    for idOfDeletedRecordZone in idsOfDeletedRecordZones {
+                    if let records = records {
                         
-                        // Find all local Records in this Record Zone and delete them, 
-                        // ensuring that related records are also deleted
+                        Mist.internalRemove(Set(records), from: self.scope, finished: { (removeOperationResult) in
+                            
+                            guard removeOperationResult.succeeded == true else {
+                                fatalError("Could not remove records due to record operation error: \(removeOperationResult.error!)")
+                            }
+                            
+                        })
                         
                     }
                     
-                    var idsOfDeletedRecords: [CKRecordID] = []
+                })
+                
+                let recordsToAdd = modifiedRecords.map({ Record(backingRemoteRecord:$0) })
+                Mist.internalAdd(Set(recordsToAdd), to: self.scope, finished: { (addOperationResult) in
                     
-                    // TODO: Cache and pass per-record-zone change tokens here
-                    let recordZoneChangesOperation = CKFetchRecordZoneChangesOperation(recordZoneIDs: idsOfUpdatedRecordZones, optionsByRecordZoneID: nil)
-                    recordZoneChangesOperation.fetchAllChanges = true
-                    recordZoneChangesOperation.recordWithIDWasDeletedBlock = { (recordId, string) in idsOfDeletedRecords.append(recordId) }
+                    guard addOperationResult.succeeded == true else {
+                        fatalError("Could not add records due to record operation error: \(addOperationResult.error!)")
+                    }
                     
-                    
-                }
+                })
                 
             }
             

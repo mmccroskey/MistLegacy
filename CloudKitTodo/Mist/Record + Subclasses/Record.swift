@@ -39,29 +39,22 @@ class Record: Hashable {
     
     // MARK: - Initializer
     
-    init(className: String?=nil, backingRemoteRecord:CKRecord?=nil) {
+    init(className: String) {
         
-        if let className = className {
-            
-            self.className = className
-            self.identifier = UUID().uuidString as RecordIdentifier
-            
-            let recordID = CKRecordID(recordName: self.identifier)
-            self.backingRemoteRecord = CKRecord(recordType: self.className, recordID: recordID)
-            
-            
-        } else if let backingRemoteRecord = backingRemoteRecord {
-            
-            self.backingRemoteRecord = backingRemoteRecord
-            
-            self.className = self.backingRemoteRecord.recordType
-            self.identifier = self.backingRemoteRecord.recordID.recordName
-            
-        } else {
-            
-            fatalError()
-            
-        }
+        self.className = className
+        self.identifier = UUID().uuidString as RecordIdentifier
+        
+        let recordID = CKRecordID(recordName: self.identifier)
+        self.backingRemoteRecord = CKRecord(recordType: self.className, recordID: recordID)
+        
+    }
+    
+    init(backingRemoteRecord:CKRecord) {
+        
+        self.backingRemoteRecord = backingRemoteRecord
+        
+        self.className = self.backingRemoteRecord.recordType
+        self.identifier = self.backingRemoteRecord.recordID.recordName
         
         for key in self.backingRemoteRecord.allKeys() {
             
@@ -104,7 +97,7 @@ class Record: Hashable {
     internal let className: String
     
     internal var scope: CKDatabaseScope?
-    internal var recordZone: CKRecordZone?
+    internal var recordZone: RecordZone?
     internal var share: CKShare?
     
     internal let backingRemoteRecord: CKRecord
