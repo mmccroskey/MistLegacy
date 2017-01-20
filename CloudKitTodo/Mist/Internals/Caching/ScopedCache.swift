@@ -9,7 +9,7 @@
 import Foundation
 import CloudKit
 
-class ScopedCache {
+internal class ScopedCache {
     
     
     // MARK: - Initializers

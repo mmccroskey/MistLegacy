@@ -19,7 +19,7 @@ internal class PublicCache: ScopedCache {
     }
     
     
-    // MARK: - Public Functions
+    // MARK: - Internal Functions
     
     override func addCachedRecord(_ record:Record) {
         self.addCachedRecords([record])
@@ -53,7 +53,7 @@ internal class PublicCache: ScopedCache {
         
     }
     
-    internal func handleNotification() {
+    func handleNotification() {
         
         var modifiedNotifications: [CKNotification] = []
         
@@ -125,9 +125,6 @@ internal class PublicCache: ScopedCache {
         executeNotificationChangesOperation()
         
     }
-    
-    
-    // MARK: - Internal Functions
     
     internal func adjustQuerySubscriptions(_ automaticSyncEnabled:Bool, completion:((Error?) -> Void)) {
         

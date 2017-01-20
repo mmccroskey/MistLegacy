@@ -9,10 +9,10 @@
 import Foundation
 import CloudKit
 
-class NonPublicCache: ScopedCache {
+internal class NonPublicCache: ScopedCache {
     
     
-    // MARK: - Public Properties
+    // MARK: - Internal Properties
     
     var databaseChangeToken: CKServerChangeToken? = nil
     var recordZoneChangeTokens: [RecordZoneIdentifier : CKServerChangeToken?] = [:]
@@ -118,9 +118,6 @@ class NonPublicCache: ScopedCache {
     // MARK: - Private Properties
     
     private var databaseSubscriptionId: String? = nil
-    
-    
-    // MARK: - Private Functions
     
     
 }
