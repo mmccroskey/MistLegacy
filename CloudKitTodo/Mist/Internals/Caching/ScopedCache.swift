@@ -15,7 +15,12 @@ internal class ScopedCache {
     // MARK: - Initializers
     
     init(scope:StorageScope) {
+        
         self.scope = scope
+        
+        let defaultRecordZone = RecordZone(identifier: "default")
+        self.addCachedRecordZone(defaultRecordZone)
+        
     }
     
     
@@ -23,40 +28,46 @@ internal class ScopedCache {
     
     let scope: StorageScope
     
-    var recordsWithUnpushedChanges: [RecordIdentifier : Record] = [:]
-    var recordsWithUnpushedDeletions: [RecordIdentifier : Record] = [:]
+    var defaultRecordZone: RecordZone {
+        
+        guard let recordZone = self.cachedRecordZoneWithIdentifier("default") else {
+            fatalError("Every database should have a default Record Zone")
+        }
+        
+        return recordZone
+        
+    }
+    
+    var recordZonesWithUnpushedChanges: [RecordZoneIdentifier : RecordZone] = [:]
+    var recordZonesWithUnpushedDeletions: [RecordZoneIdentifier : RecordZone] = [:]
     
     
     // MARK: - Public Functions
     
-    func cachedRecordWithIdentifier(_ identifier:RecordIdentifier) -> Record? {
-        return self.cachedRecords[identifier]
+    func cachedRecordZoneWithIdentifier(_ identifier:RecordZoneIdentifier) -> RecordZone? {
+        return self.cachedRecordZones[identifier]
     }
     
-    func cachedRecords(matching filter:FilterClosure) throws -> [Record] {
-        return try self.cachedRecords.values.filter(filter)
+    func addCachedRecordZone(_ recordZone:RecordZone) {
+        self.addCachedRecordZones([recordZone])
     }
     
-    func addCachedRecord(_ record:Record) {
-        self.addCachedRecords([record])
-    }
-    
-    func addCachedRecords(_ records:Set<Record>) {
+    func addCachedRecordZones(_ recordZones:Set<RecordZone>) {
         
-        for record in records {
-            self.cachedRecords[record.identifier] = record
+        for recordZone in recordZones {
+            self.cachedRecordZones[recordZone.identifier] = recordZone
         }
         
     }
     
-    func removeCachedRecordWithIdentifier(_ identifier:RecordIdentifier) {
-        self.removeCachedRecordsWithIdentifiers([identifier])
+    func removeCachedRecordZoneWithIdentifier(_ identifier:RecordZoneIdentifier) {
+        self.removeCachedRecordZonesWithIdentifiers([identifier])
     }
     
-    func removeCachedRecordsWithIdentifiers(_ identifiers:Set<RecordIdentifier>) {
+    func removeCachedRecordZonesWithIdentifiers(_ identifiers:Set<RecordZoneIdentifier>) {
         
         for identifier in identifiers {
-            self.cachedRecords.removeValue(forKey: identifier)
+            self.cachedRecordZones.removeValue(forKey: identifier)
         }
         
     }
@@ -64,7 +75,7 @@ internal class ScopedCache {
     
     // MARK: - Private Properties
     
-    private var cachedRecords: [RecordIdentifier : Record] = [:]
+    private var cachedRecordZones: [RecordZoneIdentifier : RecordZone] = [:]
     
     
     // MARK: - Private Functions

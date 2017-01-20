@@ -21,36 +21,24 @@ internal class PublicCache: ScopedCache {
     
     // MARK: - Internal Functions
     
-    override func addCachedRecord(_ record:Record) {
-        self.addCachedRecords([record])
+    override func cachedRecordZoneWithIdentifier(_ identifier:RecordZoneIdentifier) -> RecordZone? {
+        self.handleCallsToUnsupportedFunctions()
     }
     
-    override func addCachedRecords(_ records:Set<Record>) {
-    
-        self.addRecordsToLocallyCreatedRecords(records)
-        super.addCachedRecords(records)
-    
+    override func addCachedRecordZone(_ recordZone:RecordZone) {
+        self.handleCallsToUnsupportedFunctions()
     }
     
-    override func removeCachedRecordWithIdentifier(_ identifier:RecordIdentifier) {
-        self.removeCachedRecordsWithIdentifiers([identifier])
+    override func addCachedRecordZones(_ recordZones:Set<RecordZone>) {
+        self.handleCallsToUnsupportedFunctions()
     }
     
-    override func removeCachedRecordsWithIdentifiers(_ identifiers: Set<RecordIdentifier>) {
-        
-        var recordsToDelete: Set<Record> = []
-        
-        for identifier in identifiers {
-            
-            if let extantRecord = self.cachedRecordWithIdentifier(identifier) {
-                recordsToDelete.insert(extantRecord)
-            }
-            
-        }
-        
-        self.removeRecordsFromLocallyCreatedRecords(recordsToDelete)
-        super.removeCachedRecordsWithIdentifiers(identifiers)
-        
+    override func removeCachedRecordZoneWithIdentifier(_ identifier:RecordZoneIdentifier) {
+        self.handleCallsToUnsupportedFunctions()
+    }
+    
+    override func removeCachedRecordZonesWithIdentifiers(_ identifiers:Set<RecordZoneIdentifier>) {
+        self.handleCallsToUnsupportedFunctions()
     }
     
     func handleNotification() {
@@ -150,6 +138,10 @@ internal class PublicCache: ScopedCache {
     
     
     // MARK: - Private Functions
+    
+    private func handleCallsToUnsupportedFunctions() -> Never {
+        fatalError("The Public Database only has one Record Zone: the default Record Zone.")
+    }
     
     private func addRecordsToLocallyCreatedRecords(_ records:Set<Record>) {
         

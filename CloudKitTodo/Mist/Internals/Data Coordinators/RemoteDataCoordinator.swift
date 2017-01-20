@@ -416,7 +416,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
             let recordInADeletedZone: ((Record) throws -> Bool) = { (record) in
                 
                 if let recordZone = record.recordZone {
-                    return idsOfZonesToDelete.contains(recordZone.zoneID)
+                    return idsOfZonesToDelete.contains(recordZone.backingRecordZone.zoneID)
                 }
                 
                 return false
