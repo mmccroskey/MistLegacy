@@ -361,8 +361,8 @@ Mist.fetch(recordsWithIDs: idsOfHubbysTodos, from: .public) { (syncSummary, reco
         fatalError("Local fetch failed due to error: \(recordOperationResult.error)")
     }
     
-    let buyGroceries = records.filter({ $0.title == "Buy Groceries" })
-    let pickUpDryCleaning = records.filter({ $0.title == "Pick up dry cleaning" })
+    let buyGroceries = records.filter({ $0.title == "Buy Groceries" }).first
+    let pickUpDryCleaning = records.filter({ $0.title == "Pick up dry cleaning" }).first
     guard let buyGroceries = buyGroceries, let pickUpDryCleaning = pickUpDryCleaning else {
         
         print("Some of your husband's Todos no longer exist! I wonder if he deleted them?")
