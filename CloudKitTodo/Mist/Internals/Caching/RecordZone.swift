@@ -23,7 +23,7 @@ internal class RecordZone : Hashable {
     
     init(identifier: RecordZoneIdentifier) {
         
-        let recordZoneId = CKRecordZoneID(zoneName: "default", ownerName: CKCurrentUserDefaultName)
+        let recordZoneId = CKRecordZoneID(zoneName: identifier, ownerName: CKCurrentUserDefaultName)
         self.backingRecordZone = CKRecordZone(zoneID: recordZoneId)
         
     }
