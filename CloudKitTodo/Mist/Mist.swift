@@ -77,11 +77,13 @@ class Mist {
     
     // MARK: - Fetching Items
     
-    static func fetch(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, Record?) -> Void)) {
+    static func fetch(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int?=nil, finished:((RecordOperationResult, Record?) -> Void)) {
+        
+        let internalFetchDepth = fetchDepth ?? -1
         
         var record: Record? = nil
         
-        let operation = { record = self.singleton.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth) }
+        let operation = { record = self.singleton.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: internalFetchDepth) }
         let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
             finished(recordOperationResult, record)
         }
@@ -90,7 +92,9 @@ class Mist {
         
     }
     
-    static func fetch(_ identifiers:Set<RecordIdentifier>, from:StorageScope, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)) {
+    static func fetch(_ identifiers:Set<RecordIdentifier>, from:StorageScope, fetchDepth:Int?=nil, finished:((RecordOperationResult, [Record]?) -> Void)) {
+        
+        let internalFetchDepth = fetchDepth ?? -1
         
         var records: Set<Record> = []
         
@@ -98,7 +102,7 @@ class Mist {
             
             for identifier in identifiers {
                 
-                if let record = self.singleton.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: fetchDepth) {
+                if let record = self.singleton.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: internalFetchDepth) {
                     records.insert(record)
                 }
                 
@@ -119,12 +123,17 @@ class Mist {
     
     static func find(
         recordsOfType type:Record.Type?=nil, where filter:FilterClosure, within:StorageScope,
-        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
+        sortedBy:SortClosure?=nil, fetchDepth:Int?=nil, finished:((RecordOperationResult, [Record]?) -> Void)
     ) {
+        
+        let internalFetchDepth = fetchDepth ?? -1
         
         var records: [Record]? = nil
         
-        let operation = { records = self.singleton.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: fetchDepth) }
+        let operation = {
+            records = self.singleton.localDataCoordinator.retrieveRecords(withType:type, matching: filter, inStorageWithScope: within, fetchDepth: internalFetchDepth)
+        }
+        
         let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
             finished(recordOperationResult, records)
         }
@@ -135,12 +144,17 @@ class Mist {
     
     static func find(
         recordsOfType type:Record.Type?=nil, where predicate:NSPredicate, within:StorageScope,
-        sortedBy:SortClosure?=nil, fetchDepth:Int = -1, finished:((RecordOperationResult, [Record]?) -> Void)
+        sortedBy:SortClosure?=nil, fetchDepth:Int?=nil, finished:((RecordOperationResult, [Record]?) -> Void)
     ) {
+        
+        let internalFetchDepth = fetchDepth ?? -1
         
         var records: [Record]? = nil
         
-        let operation = { records = self.singleton.localDataCoordinator.retrieveRecords(withType: type, matching: predicate, inStorageWithScope: within, fetchDepth: fetchDepth) }
+        let operation = {
+            records = self.singleton.localDataCoordinator.retrieveRecords(withType: type, matching: predicate, inStorageWithScope: within, fetchDepth: internalFetchDepth)
+        }
+        
         let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
             finished(recordOperationResult, records)
         }
