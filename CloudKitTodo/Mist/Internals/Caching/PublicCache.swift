@@ -79,7 +79,7 @@ internal class PublicCache: ScopedCache {
                             idsOfModifiedRecords.append(recordId)
                             
                         case .recordDeleted:
-                            self.removeCachedRecordWithIdentifier(recordId.recordName)
+                            self.defaultRecordZone.removeCachedRecordWithIdentifier(recordId.recordName)
                             
                         }
                         
@@ -88,6 +88,7 @@ internal class PublicCache: ScopedCache {
                     let fetchOperation = CKFetchRecordsOperation(recordIDs: idsOfModifiedRecords)
                     fetchOperation.fetchRecordsCompletionBlock = { (recordIdRecordPairs, error) in
                         
+                        // TODO: Better error handling
                         guard let recordIdRecordPairs = recordIdRecordPairs, error == nil else {
                             fatalError("Fetching of updated records failed due to error: \(error)")
                         }
@@ -95,10 +96,9 @@ internal class PublicCache: ScopedCache {
                         for recordIdRecordPair in recordIdRecordPairs {
                             
                             let ckRecord = recordIdRecordPair.value
-                            let recordType = ckRecord.recordType
                             
-                            let mistRecord = Record(className: recordType, backingRemoteRecord: ckRecord)
-                            super.addCachedRecord(mistRecord)
+                            let mistRecord = Record(backingRemoteRecord: ckRecord)
+                            self.defaultRecordZone.addCachedRecord(mistRecord)
                             
                         }
                         

@@ -50,25 +50,36 @@ internal class RecordZone : Hashable {
     }
     
     func addCachedRecord(_ record:Record) {
-        self.addCachedRecords([record])
+        
+        self.cachedRecords[record.identifier] = record
+        self.recordsWithUnpushedChanges[record.identifier] = record
+        
     }
     
     func addCachedRecords(_ records:Set<Record>) {
         
         for record in records {
-            self.cachedRecords[record.identifier] = record
+            self.addCachedRecord(record)
         }
         
     }
     
     func removeCachedRecordWithIdentifier(_ identifier:RecordIdentifier) {
-        self.removeCachedRecordsWithIdentifiers([identifier])
+        
+        if let record = self.cachedRecords[identifier] {
+            
+            self.recordsWithUnpushedChanges.removeValue(forKey: record.identifier)
+            self.recordsWithUnpushedDeletions[record.identifier] = record
+            self.cachedRecords.removeValue(forKey: record.identifier)
+            
+        }
+        
     }
     
     func removeCachedRecordsWithIdentifiers(_ identifiers:Set<RecordIdentifier>) {
         
         for identifier in identifiers {
-            self.cachedRecords.removeValue(forKey: identifier)
+            self.removeCachedRecordWithIdentifier(identifier)
         }
         
     }

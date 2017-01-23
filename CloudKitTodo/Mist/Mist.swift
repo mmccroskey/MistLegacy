@@ -292,22 +292,32 @@ class Mist {
         
     }
     
-    internal static func recordsWithUnpushedChangesAndDeletions(forScope scope:StorageScope, finished:((RecordOperationResult, [Record]?, [Record]?) -> Void)) {
+    internal static func recordsWithUnpushedChangesAndDeletions(forScope scope:StorageScope, finished:((RecordOperationResult, Set<Record>, Set<Record>) -> Void)) {
         
-        var unpushedChanges: [Record]? = nil
-        var unpushedDeletions: [Record]? = nil
+        var unpushedChanges: Set<Record> = []
+        var unpushedDeletions: Set<Record> = []
         
         let operation = {
             
-            for recordZone in self.singleton.localDataCoordinator.currentUserCache.scopedCache(withScope: scope).recordZonesWithUnpushedChanges {
+            for recordZoneKeyValue in self.singleton.localDataCoordinator.currentUserCache.scopedCache(withScope: scope).recordZonesWithUnpushedChanges {
+                
+                let recordZone = recordZoneKeyValue.value
+                let recordsWithUnpushedChanges = recordZone.recordsWithUnpushedChanges.map({ return $0.value })
+                let recordsWithUnpushedChangesSet = Set(recordsWithUnpushedChanges)
+                
+                unpushedChanges = unpushedChanges.union(recordsWithUnpushedChangesSet)
                 
             }
             
-            let unpushedChangeData = self.singleton.localDataCoordinator.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges.values
-            unpushedChanges = unpushedChangeData.map({ $0 }) // Because Swift compiler is a dumbass
-            
-            let unpushedDeletionData = self.singleton.localDataCoordinator.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedDeletions.values
-            unpushedDeletions = unpushedDeletionData.map({ $0 }) // Because Swift compiler is a dumbass
+            for recordZoneKeyValue in self.singleton.localDataCoordinator.currentUserCache.scopedCache(withScope: scope).recordZonesWithUnpushedDeletions {
+                
+                let recordZone = recordZoneKeyValue.value
+                let recordsWithUnpushedDeletions = recordZone.recordsWithUnpushedDeletions.map({ return $0.value })
+                let recordsWithUnpushedDeletionsSet = Set(recordsWithUnpushedDeletions)
+                
+                unpushedDeletions = unpushedDeletions.union(recordsWithUnpushedDeletionsSet)
+                
+            }
             
         }
         

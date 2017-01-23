@@ -49,25 +49,36 @@ internal class ScopedCache {
     }
     
     func addCachedRecordZone(_ recordZone:RecordZone) {
-        self.addCachedRecordZones([recordZone])
+        
+        self.cachedRecordZones[recordZone.identifier] = recordZone
+        self.recordZonesWithUnpushedChanges[recordZone.identifier] = recordZone
+        
     }
     
     func addCachedRecordZones(_ recordZones:Set<RecordZone>) {
         
         for recordZone in recordZones {
-            self.cachedRecordZones[recordZone.identifier] = recordZone
+            self.addCachedRecordZone(recordZone)
         }
         
     }
     
     func removeCachedRecordZoneWithIdentifier(_ identifier:RecordZoneIdentifier) {
-        self.removeCachedRecordZonesWithIdentifiers([identifier])
+        
+        if let recordZone = self.cachedRecordZones[identifier] {
+            
+            self.recordZonesWithUnpushedChanges.removeValue(forKey: recordZone.identifier)
+            self.recordZonesWithUnpushedDeletions[recordZone.identifier] = recordZone
+            self.cachedRecordZones.removeValue(forKey: identifier)
+            
+        }
+        
     }
     
     func removeCachedRecordZonesWithIdentifiers(_ identifiers:Set<RecordZoneIdentifier>) {
         
         for identifier in identifiers {
-            self.cachedRecordZones.removeValue(forKey: identifier)
+            self.removeCachedRecordZoneWithIdentifier(identifier)
         }
         
     }

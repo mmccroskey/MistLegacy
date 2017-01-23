@@ -743,22 +743,8 @@ internal class RemoteDataCoordinator : DataCoordinator {
                 return
             }
             
-            let unpushedChanges: [Record]
-            if let extantUnpushedChanges = fetchedUnpushedChanges {
-                unpushedChanges = extantUnpushedChanges
-            } else {
-                unpushedChanges = []
-            }
-            
-            let unpushedDeletions: [Record]
-            if let extantUnpushedDeletions = fetchedUnpushedDeletions {
-                unpushedDeletions = extantUnpushedDeletions
-            } else {
-                unpushedDeletions = []
-            }
-            
-            let unpushedChangesCKRecords = unpushedChanges.map({ $0.backingRemoteRecord }) as [CKRecord]
-            let unpushedDeletionsCKRecordIDs = unpushedDeletions.map({ CKRecordID(recordName: $0.identifier) }) as [CKRecordID]
+            let unpushedChangesCKRecords = fetchedUnpushedChanges.map({ $0.backingRemoteRecord }) as [CKRecord]
+            let unpushedDeletionsCKRecordIDs = fetchedUnpushedDeletions.map({ CKRecordID(recordName: $0.identifier) }) as [CKRecordID]
             
             let modifyOperation = CKModifyRecordsOperation(recordsToSave: unpushedChangesCKRecords, recordIDsToDelete: unpushedDeletionsCKRecordIDs)
             modifyOperation.modifyRecordsCompletionBlock = { (savedRecords, recordIDsOfDeletedRecords, operationError) in

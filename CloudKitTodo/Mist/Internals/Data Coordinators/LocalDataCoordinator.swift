@@ -53,7 +53,7 @@ internal class LocalDataCoordinator : DataCoordinator {
         
         let cacheForUserRecord = self.localCacheCoordinator.userCache(associatedWith: identifier)
         
-        if let userRecord = cacheForUserRecord.publicCache.cachedRecordWithIdentifier(identifier) {
+        if let userRecord = cacheForUserRecord.publicCache.defaultRecordZone.cachedRecordWithIdentifier(identifier) {
             return userRecord
         } else {
             return nil
@@ -64,13 +64,13 @@ internal class LocalDataCoordinator : DataCoordinator {
     internal func setCurrentUser(_ userRecord:CloudKitUser) {
         
         let userCache = self.localCacheCoordinator.userCache(associatedWith: userRecord.identifier)
-        userCache.publicCache.addCachedRecord(userRecord)
+        userCache.publicCache.defaultRecordZone.addCachedRecord(userRecord)
         
     }
     
     func retrieveRecord(matching identifier:RecordIdentifier, fromStorageWithScope scope:StorageScope, fetchDepth:Int) -> Record? {
         
-        let record = self.currentUserCache.scopedCache(withScope: scope).cachedRecordWithIdentifier(identifier)
+        let record = self.currentUserCache.scopedCache(withScope: scope).defaultRecordZone.cachedRecordWithIdentifier(identifier)
         
         self.associateRelatedRecords(for: record, in: scope, using: fetchDepth)
         
@@ -92,7 +92,7 @@ internal class LocalDataCoordinator : DataCoordinator {
         
         do {
             
-            let initialRecords = try self.currentUserCache.scopedCache(withScope: scope).cachedRecords(matching: filter)
+            let initialRecords = try self.currentUserCache.scopedCache(withScope: scope).defaultRecordZone.cachedRecords(matching: filter)
             
             let typeFilteredRecords: [Record]
             if let typeFilter = typeFilter {
@@ -150,8 +150,6 @@ internal class LocalDataCoordinator : DataCoordinator {
             
         case .addition:
             
-            var recordsToUpdate: Set<Record> = []
-            
             for record in records {
                 
                 guard ((record.scope == nil) || (record.scope == scope)) else {
@@ -160,25 +158,34 @@ internal class LocalDataCoordinator : DataCoordinator {
                 
                 record.scope = scope
                 
-                if scope == .private && record.recordZone == nil {
+                if record.recordZone == nil {
                     
-                    guard let currentUser = Mist.currentUser else {
-                        fatalError("We're trying to create a zone with the current User as the User, but no current User exists.")
+                    switch scope {
+                        
+                    case .public:
+                        record.recordZone = self.currentUserCache.scopedCache(withScope: .public).defaultRecordZone
+                        
+                    default:
+                        
+                        if let parent = record.parent, let parentRecordZone = parent.recordZone {
+                            
+                            record.recordZone = parentRecordZone
+                            
+                        } else {
+                            
+                            let recordZone = RecordZone(identifier: UUID().uuidString)
+                            self.currentUserCache.scopedCache(withScope: scope).addCachedRecordZone(recordZone)
+                            record.recordZone = recordZone
+                            
+                        }
+                        
                     }
-                    
-                    let recordZoneID = CKRecordZoneID(zoneName: UUID().uuidString, ownerName: currentUser.identifier)
-                    let recordZone = CKRecordZone(zoneID: recordZoneID)
-                    record.recordZone = recordZone
                     
                 }
                 
                 switch scope {
                     
                 case .public:
-                    
-                    guard record.recordZone == nil else {
-                        fatalError("Records with custom zones cannot be added to the public scope; the public scope doesn't support custom zones.")
-                    }
                     
                     guard record.share == nil else {
                         fatalError("Records with associated shares cannot be added to the public scope; the public scope doesn't support shares.")
@@ -211,27 +218,29 @@ internal class LocalDataCoordinator : DataCoordinator {
                     
                 }
                 
-                recordsToUpdate.insert(record)
-                self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges[record.identifier] = record
+                guard let recordZone = record.recordZone else {
+                    fatalError("Record Zone should always be set for Record at this point.")
+                }
+                
+                recordZone.addCachedRecord(record)
+                self.currentUserCache.scopedCache(withScope: scope).addCachedRecordZone(recordZone)
                 
             }
-            
-            self.currentUserCache.scopedCache(withScope: scope).addCachedRecords(recordsToUpdate)
             
         case .removal:
             
-            var idsOfRecordsToRemove: Set<RecordIdentifier> = []
-            
             for record in records {
                 
-                idsOfRecordsToRemove.insert(record.identifier)
+                // If a Record doesn't have a Record Zone, 
+                // then it's never been added to anything, 
+                // so there's nothing from which to remove it
+                guard let recordZone = record.recordZone else {
+                    return
+                }
                 
-                self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedChanges.removeValue(forKey: record.identifier)
-                self.currentUserCache.scopedCache(withScope: scope).recordsWithUnpushedDeletions[record.identifier] = record
+                recordZone.removeCachedRecordWithIdentifier(record.identifier)
                 
             }
-            
-            self.currentUserCache.scopedCache(withScope: scope).removeCachedRecordsWithIdentifiers(idsOfRecordsToRemove)
             
         }
         
