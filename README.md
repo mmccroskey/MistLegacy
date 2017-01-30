@@ -535,7 +535,7 @@ Therefore, all Users share the same Public Database, but each User has her own P
 
 *(Graphic Goes Here)*
 
-Because a given device can only have one authenticated User at a time, Mist represents this single-User view of the Container via its local cache. The local cache contains one Public Storage Scope, one Private Storage Scope, and one Shared Storage Scope. The Public Storage Scope exists indpependently of whether a User is authenticated; the other two Scopes (Private and Shared) are tied to the currently authenticated User, meaning that each instance of Mist has U Private Scopes and U Shared Scopes, where U is the number of Users that have ever been authenticated on a particular Device. Mist allows you to interact with the Public Scope, and the Private and Shared Scopes for the current User if one exists.
+Because a given device can only have one authenticated User at a time, Mist represents this single-User view of the Container via its local cache. The local cache contains one Public Storage Scope, one Private Storage Scope, and one Shared Storage Scope. The Public Storage Scope exists independently of whether a User is authenticated; the other two Scopes (Private and Shared) are tied to the currently authenticated User, meaning that each instance of Mist has U Private Scopes and U Shared Scopes, where U is the number of Users that have ever been authenticated on a particular Device. Mist allows you to interact with the Public Scope, and the Private and Shared Scopes for the current User if one exists.
 
 #### Interacting with Data
 
