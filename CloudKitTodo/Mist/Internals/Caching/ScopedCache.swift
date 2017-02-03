@@ -31,15 +31,16 @@ internal class ScopedCache {
     var defaultRecordZone: RecordZone {
         
         guard let recordZone = self.cachedRecordZoneWithIdentifier("default") else {
-            fatalError("Every database should have a default Record Zone")
+            fatalError("Every Database should have a default Record Zone")
         }
         
         return recordZone
         
     }
     
-    var recordZonesWithUnpushedChanges: [RecordZoneIdentifier : RecordZone] = [:]
-    var recordZonesWithUnpushedDeletions: [RecordZoneIdentifier : RecordZone] = [:]
+    private(set) var cachedRecordZones: [RecordZoneIdentifier : RecordZone] = [:]
+    private(set) var recordZonesWithUnpushedChanges: [RecordZoneIdentifier : RecordZone] = [:]
+    private(set) var recordZonesWithUnpushedDeletions: [RecordZoneIdentifier : RecordZone] = [:]
     
     
     // MARK: - Public Functions
@@ -82,11 +83,6 @@ internal class ScopedCache {
         }
         
     }
-    
-    
-    // MARK: - Private Properties
-    
-    private var cachedRecordZones: [RecordZoneIdentifier : RecordZone] = [:]
     
     
     // MARK: - Private Functions

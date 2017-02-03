@@ -746,6 +746,7 @@ internal class RemoteDataCoordinator : DataCoordinator {
             let unpushedChangesCKRecords = fetchedUnpushedChanges.map({ $0.backingRemoteRecord }) as [CKRecord]
             let unpushedDeletionsCKRecordIDs = fetchedUnpushedDeletions.map({ CKRecordID(recordName: $0.identifier) }) as [CKRecordID]
             
+            // TODO: For each record, update it locally as it's saved (so we get it's updated creationDate, etc.)
             let modifyOperation = CKModifyRecordsOperation(recordsToSave: unpushedChangesCKRecords, recordIDsToDelete: unpushedDeletionsCKRecordIDs)
             modifyOperation.modifyRecordsCompletionBlock = { (savedRecords, recordIDsOfDeletedRecords, operationError) in
                 

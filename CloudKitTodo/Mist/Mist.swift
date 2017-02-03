@@ -79,16 +79,18 @@ class Mist {
     
     static func fetch(_ identifier:RecordIdentifier, from:StorageScope, fetchDepth:Int?=nil, finished:((RecordOperationResult, Record?) -> Void)) {
         
+        let identifiers: Set<RecordIdentifier> = [identifier]
         let internalFetchDepth = fetchDepth ?? -1
         
-        var record: Record? = nil
-        
-        let operation = { record = self.singleton.localDataCoordinator.retrieveRecord(matching: identifier, fromStorageWithScope: from, fetchDepth: internalFetchDepth) }
-        let internalFinished: ((RecordOperationResult, DirectionalSyncSummary?) -> Void) = { recordOperationResult, directionalSyncSummary in
-            finished(recordOperationResult, record)
+        self.fetch(identifiers, from: from, fetchDepth: internalFetchDepth) { (recordOperationResult, records) in
+            
+            if let records = records, let record = records.first {
+                finished(recordOperationResult, record)
+            } else {
+                finished(recordOperationResult, nil)
+            }
+            
         }
-        
-        self.performUserGuardedOperation(operation, finished: internalFinished)
         
     }
     
@@ -122,7 +124,7 @@ class Mist {
     }
     
     static func find(
-        recordsOfType type:Record.Type?=nil, where filter:FilterClosure, within:StorageScope,
+        recordsOfType type:Record.Type, where filter:FilterClosure, within:StorageScope,
         sortedBy:SortClosure?=nil, fetchDepth:Int?=nil, finished:((RecordOperationResult, [Record]?) -> Void)
     ) {
         
@@ -364,6 +366,11 @@ class Mist {
         self.performUserGuardedOperation(operation, finished: internalFinished)
         
     }
+    
+    internal static func internalFind(
+        recordsOfType type:Record.Type?=nil, where filter:FilterClosure, within:StorageScope,
+        sortedBy:SortClosure?=nil, fetchDepth:Int?=nil, finished:((RecordOperationResult, [Record]?) -> Void)
+        ) {}
     
     
     // MARK: - Private Properties
