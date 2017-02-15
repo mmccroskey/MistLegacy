@@ -16,7 +16,7 @@ Mist was created because **CloudKit is great, but it has some fundamental shortc
 
 Mist seeks to solve these problems by directly supporting **local persistence**, by requiring the use of **typed models with true relationships**, & by providing **automatic synchronization**. 
 
-To start using Mist, jump to [Usage](https://github.com/mmccroskey/Mist/blob/master/README.md#usage), or to learn more about how Mist is implemented, see [Mist's Architecture Explained](https://github.com/mmccroskey/Mist/blob/master/README.md#mists-architecture-explained).
+To start using Mist, jump to [Usage](https://github.com/mmccroskey/MistLegacy/blob/master/README.md#usage), or to learn more about how Mist is implemented, see [Mist's Architecture Explained](https://github.com/mmccroskey/MistLegacy/blob/master/README.md#mists-architecture-explained).
 
 ## Requirements
 - iOS 10.0+ / macOS 10.12+ / tvOS 10.0+ / watchOS 3.0+
@@ -24,9 +24,9 @@ To start using Mist, jump to [Usage](https://github.com/mmccroskey/Mist/blob/mas
 - Swift 3.0+
 
 ## Communication
-- If you have **found a bug**, [open an issue](https://github.com/mmccroskey/Mist/issues/new).
-- If you **have a feature request**, [open an issue](https://github.com/mmccroskey/Mist/issues/new).
-- If you **want to contribute**, [submit a pull request](https://github.com/mmccroskey/Mist/pulls/new).
+- If you have **found a bug**, [open an issue](https://github.com/mmccroskey/MistLegacy/issues/new).
+- If you **have a feature request**, [open an issue](https://github.com/mmccroskey/MistLegacy/issues/new).
+- If you **want to contribute**, [submit a pull request](https://github.com/mmccroskey/MistLegacy/pulls/new).
 
 ## Installation
 
@@ -43,7 +43,7 @@ Before installing and using Mist, ensure that your application is configured to 
 
 ### Getting Set Up
 
-After [installing Mist](https://github.com/mmccroskey/Mist/blob/master/README.md#installation), you'll need to create your `Record` subclasses.
+After [installing Mist](https://github.com/mmccroskey/MistLegacy/blob/master/README.md#installation), you'll need to create your `Record` subclasses.
 
 #### Creating Record Subclasses
 
@@ -335,7 +335,7 @@ Mist.add(todoLists, to: .public) { (recordOperationResult, syncSummary) in
 
 You use the `add` function whether you're saving new Records, or saving edits to existing Records.
 
-A quick side note: by default, saving a Record saves all the Records linked to it -- that is, the Records with which it has relationships. Therefore, saving the TodoLists in the example above saves all the Todos we created, as well the new User (your husband) and even the Attachment we added to our "Buy groceries" Todo. This default behavior can be overridden via an optional property on the `add` function; see [Advanced Usage](https://github.com/mmccroskey/Mist/blob/master/README.md#advanced-usage) for more info.
+A quick side note: by default, saving a Record saves all the Records linked to it -- that is, the Records with which it has relationships. Therefore, saving the TodoLists in the example above saves all the Todos we created, as well the new User (your husband) and even the Attachment we added to our "Buy groceries" Todo. This default behavior can be overridden via an optional property on the `add` function; see [Advanced Usage](https://github.com/mmccroskey/MistLegacy/blob/master/README.md#advanced-usage) for more info.
 
 #### Fetching Records
 
