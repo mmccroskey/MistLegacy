@@ -1,3 +1,7 @@
+# This repo is no longer maintained
+
+This is an old side project that was never finished. I've left it here for posterity and to serve as potential inspiration or raw materials for others who may wish to pursue a similar project. I took another stab at this project (also abandoned), which you can view [here](https://github.com/mmccroskey/Mist).
+
 # Mist
 
 Mist is an adapter for CloudKit that supports local persistence, typed models with true relationships, automatic synchronization, and a convention-over-configuration approach to enforcing best practices.
